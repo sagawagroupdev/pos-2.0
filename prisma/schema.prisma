@@ -1,0 +1,224 @@
+// Sistem Kasir POS & QR Table Ordering
+// learn more: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  CASHIER
+}
+
+enum OrderType {
+  DINE_IN
+  TAKE_AWAY
+}
+
+enum PaymentMethod {
+  CASH
+  QRIS
+}
+
+enum OrderStatus {
+  PENDING
+  PENDING_PAYMENT
+  WAITING_CONFIRMATION
+  PAID
+  CANCELLED
+}
+
+enum OrderChannel {
+  CASHIER
+  QR
+}
+
+// ---------- Kemitraan ----------
+model Partnership {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  subPartnerships SubPartnership[]
+}
+
+model SubPartnership {
+  id            String      @id @default(cuid())
+  name          String
+  partnershipId String
+  partnership   Partnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  cashiers User[]
+
+  @@unique([partnershipId, name])
+}
+
+// ---------- Better Auth managed tables ----------
+model User {
+  id              String    @id @default(cuid())
+  name            String
+  email           String    @unique
+  emailVerified   Boolean   @default(false)
+  image           String?
+  username        String?   @unique
+  displayUsername String?
+  role            Role      @default(CASHIER)
+  banned          Boolean   @default(false)
+  banReason       String?
+  banExpires      DateTime?
+  subPartnershipId String?
+  subPartnership   SubPartnership? @relation(fields: [subPartnershipId], references: [id])
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  sessions Session[]
+  accounts Account[]
+  orders   Order[]
+  tables   Table[]
+}
+
+model Session {
+  id             String   @id @default(cuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token          String   @unique
+  expiresAt      DateTime
+  ipAddress      String?
+  userAgent      String?
+  impersonatedBy String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Account {
+  id                    String    @id @default(cuid())
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountId             String
+  providerId            String
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+model Verification {
+  id         String   @id @default(cuid())
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+// ---------- Business domain ----------
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  items Item[]
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  price       Float
+  stock       Int      @default(0)
+  image       String?
+  isAvailable Boolean  @default(true)
+  categoryId  String
+  category    Category @relation(fields: [categoryId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  orderItems OrderItem[]
+}
+
+model Table {
+  id        String   @id @default(cuid())
+  number    String
+  name      String?
+  cashierId String
+  cashier   User     @relation(fields: [cashierId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  orders Order[]
+
+  @@unique([cashierId, number])
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  transactionDate DateTime     @default(now())
+  channel         OrderChannel @default(CASHIER)
+
+  // Informasi pesanan
+  cashierId     String?
+  cashier       User?         @relation(fields: [cashierId], references: [id])
+  tableId       String?
+  table         Table?        @relation(fields: [tableId], references: [id])
+  customerName  String?
+  customerPhone String?
+  tableNumber   String?
+  type          OrderType     @default(DINE_IN)
+  paymentMethod PaymentMethod
+  status        OrderStatus   @default(PENDING)
+  note          String?
+
+  items OrderItem[]
+
+  // Ringkasan pembayaran
+  subtotal     Float
+  discount     Float @default(0)
+  tax          Float @default(0)
+  total        Float
+  paidAmount   Float @default(0)
+  changeAmount Float @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([cashierId])
+  @@index([status])
+  @@index([transactionDate])
+}
+
+model OrderItem {
+  id       String  @id @default(cuid())
+  orderId  String
+  order    Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  itemId   String
+  item     Item    @relation(fields: [itemId], references: [id])
+  name     String // snapshot nama saat transaksi
+  quantity Int
+  price    Float // harga saat transaksi
+  note     String?
+}
+
+model Setting {
+  id            String   @id @default(cuid())
+  storeName     String   @default("Toko Saya")
+  address       String?
+  phone         String?
+  logoUrl       String?
+  taxRate       Float    @default(10)
+  taxEnabled    Boolean  @default(true)
+  qrisImageUrl  String?
+  receiptFooter String?  @default("Terima Kasih")
+  printerName   String?
+  paperSize     String?  @default("58mm")
+  updatedAt     DateTime @updatedAt
+}
