@@ -13,20 +13,32 @@ export async function createCashier(formData: FormData): Promise<ActionResult> {
 
   const username = String(formData.get("username") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const partnershipId = String(formData.get("partnershipId") ?? "").trim();
   const subPartnershipId = String(formData.get("subPartnershipId") ?? "").trim();
 
   if (!username || password.length < 8) {
     return { ok: false, error: "Username dan password (min 8 karakter) wajib diisi" };
   }
-  if (!subPartnershipId) {
-    return { ok: false, error: "Kemitraan dan sub kemitraan wajib dipilih" };
+  if (!partnershipId) {
+    return { ok: false, error: "Kemitraan wajib dipilih" };
   }
 
-  const sub = await prisma.subPartnership.findUnique({
-    where: { id: subPartnershipId },
+  const partnership = await prisma.partnership.findUnique({
+    where: { id: partnershipId },
+    include: { subPartnerships: { select: { id: true } } },
   });
-  if (!sub) {
-    return { ok: false, error: "Sub kemitraan tidak ditemukan" };
+  if (!partnership) {
+    return { ok: false, error: "Kemitraan tidak ditemukan" };
+  }
+
+  const hasSub = partnership.subPartnerships.length > 0;
+  if (hasSub) {
+    if (!subPartnershipId) {
+      return { ok: false, error: "Sub kemitraan wajib dipilih" };
+    }
+    if (!partnership.subPartnerships.some((s) => s.id === subPartnershipId)) {
+      return { ok: false, error: "Sub kemitraan tidak valid" };
+    }
   }
 
   try {
@@ -42,7 +54,7 @@ export async function createCashier(formData: FormData): Promise<ActionResult> {
     });
     await prisma.user.update({
       where: { id: user.id },
-      data: { subPartnershipId },
+      data: { partnershipId, subPartnershipId: subPartnershipId || null },
     });
     revalidatePath("/kasir");
     return { ok: true };

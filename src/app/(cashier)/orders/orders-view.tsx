@@ -34,11 +34,12 @@ import { confirmQrOrder, cancelQrOrder } from "./confirm-actions";
 
 export type OrderRow = {
   id: string;
+  orderNumber: string;
   transactionDate: string;
   channel: "CASHIER" | "QR";
   type: "DINE_IN" | "TAKE_AWAY";
-  status: "PENDING" | "PENDING_PAYMENT" | "WAITING_CONFIRMATION" | "PAID" | "CANCELLED";
-  paymentMethod: "CASH" | "QRIS";
+  status: "DRAFT" | "PENDING" | "PENDING_PAYMENT" | "WAITING_CONFIRMATION" | "PAID" | "CANCELLED";
+  paymentMethod: "CASH" | "CARD" | "QRIS";
   customerName: string | null;
   tableNumber: string | null;
   subtotal: number;
@@ -58,6 +59,7 @@ const rupiah = (n: number) =>
   }).format(n);
 
 const statusLabel: Record<OrderRow["status"], string> = {
+  DRAFT: "Draft",
   PENDING: "Pending",
   PENDING_PAYMENT: "Menunggu Bayar",
   WAITING_CONFIRMATION: "Menunggu Konfirmasi",
@@ -69,6 +71,7 @@ const statusVariant: Record<
   OrderRow["status"],
   "default" | "secondary" | "destructive" | "outline"
 > = {
+  DRAFT: "outline",
   PENDING: "outline",
   PENDING_PAYMENT: "secondary",
   WAITING_CONFIRMATION: "secondary",
@@ -187,7 +190,7 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
                     minute: "2-digit",
                   })}
                 </TableCell>
-                <TableCell>{o.id.slice(0, 8).toUpperCase()}</TableCell>
+                <TableCell>{o.orderNumber}</TableCell>
                 <TableCell>{o.channel === "QR" ? "QR Table" : "Kasir"}</TableCell>
                 <TableCell>{o.customerName ?? "-"}</TableCell>
                 <TableCell>{rupiah(o.total)}</TableCell>
@@ -206,7 +209,7 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Detail Pesanan {selected?.id.slice(0, 8).toUpperCase()}
+              Detail Pesanan {selected?.orderNumber}
             </DialogTitle>
             <DialogDescription>
               {selected &&

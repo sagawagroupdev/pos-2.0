@@ -5,7 +5,7 @@
 Sistem Kasir POS + QR Table Ordering. Stack: Next.js 16, React 19, Prisma 7 (Neon Postgres), Better Auth, Redis (ioredis), Cloudflare R2, Tailwind v4 + shadcn (Base UI), Pusher.
 
 ## Design System
-- **Font**: Plus Jakarta Sans (via `next/font/google` di root layout, variabel `--font-plus-jakarta` → `--font-sans`).
+- **Font**: Inter (via `next/font/google` di root layout, variabel `--font-inter` → `--font-sans`).
 - **Primary color**: `#FF3131` (≈ `oklch(0.628 0.247 27.3)`) di `--primary`, light & dark, di `globals.css`.
 
 ## Next.js 16 gotchas (beda dari versi lama)

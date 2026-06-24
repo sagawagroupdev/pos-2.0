@@ -2,62 +2,84 @@
 
 import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
-import { submitPosOrder } from "./actions";
+import { submitPosOrder, holdPosOrder, discardDraft } from "./actions";
+import { useCashier } from "./cashier-context";
+import { useDraftsUI } from "./drafts-ui-context";
 import type { MenuCategory } from "@/lib/menu";
+import { SearchNormal1, Trash } from "iconsax-react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import { Receipt, type ReceiptData, type ReceiptStore } from "@/components/receipt";
+import {
+  CartPanel,
+  rupiah,
+  type CartItem,
+  type OrderType,
+  type PaymentMethod,
+} from "./cart-panel";
 
-type CartItem = {
+export type DraftItem = {
   itemId: string;
   name: string;
   price: number;
-  stock: number;
   quantity: number;
-  note: string;
+  note: string | null;
 };
 
-const rupiah = (n: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(n);
+export type DraftOrder = {
+  id: string;
+  orderNumber: string;
+  type: OrderType;
+  customerName: string | null;
+  note: string | null;
+  total: number;
+  createdAt: string;
+  items: DraftItem[];
+};
 
 export function PosTerminal({
   menu,
-  cashierName,
   store,
   taxRate,
   taxEnabled,
+  enableDraftOrders,
+  drafts,
 }: {
   menu: MenuCategory[];
-  cashierName: string;
   store: ReceiptStore;
   taxRate: number;
   taxEnabled: boolean;
+  enableDraftOrders: boolean;
+  drafts: DraftOrder[];
 }) {
+  const router = useRouter();
+  const { cashierName } = useCashier();
+  const { open: draftsOpen, setOpen: setDraftsOpen } = useDraftsUI();
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [orderType, setOrderType] = useState<"DINE_IN" | "TAKE_AWAY">("DINE_IN");
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "QRIS">("CASH");
-  const [discount, setDiscount] = useState(0);
+  const [orderType, setOrderType] = useState<OrderType>("DINE_IN");
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
+  const [discountPercent, setDiscountPercent] = useState(0);
   const [paidAmount, setPaidAmount] = useState(0);
   const [customerName, setCustomerName] = useState("");
+  const [note, setNote] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [search, setSearch] = useState("");
+  const [resumingDraftId, setResumingDraftId] = useState<string | null>(null);
+  const [holding, setHolding] = useState(false);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef: receiptRef });
@@ -66,10 +88,12 @@ export function PosTerminal({
     () => cart.reduce((sum, c) => sum + c.price * c.quantity, 0),
     [cart]
   );
-  const afterDiscount = Math.max(0, subtotal - discount);
+  const discountAmount = Math.round(subtotal * (discountPercent / 100));
+  const afterDiscount = Math.max(0, subtotal - discountAmount);
   const tax = taxEnabled ? Math.round(afterDiscount * (taxRate / 100)) : 0;
   const total = afterDiscount + tax;
   const change = paymentMethod === "CASH" ? Math.max(0, paidAmount - total) : 0;
+  const itemCount = cart.reduce((s, c) => s + c.quantity, 0);
 
   const cartQtyById = useMemo(() => {
     const m = new Map<string, number>();
@@ -82,12 +106,14 @@ export function PosTerminal({
       activeCategory === "all"
         ? menu
         : menu.filter((c) => c.id === activeCategory);
+    const q = search.trim().toLowerCase();
     return cats.flatMap((cat) =>
       cat.items
         .filter((i) => i.isAvailable)
+        .filter((i) => (q ? i.name.toLowerCase().includes(q) : true))
         .map((i) => ({ ...i, categoryName: cat.name }))
     );
-  }, [menu, activeCategory]);
+  }, [menu, activeCategory, search]);
 
   function addItem(item: MenuCategory["items"][number]) {
     if (!item.isAvailable || item.stock < 1) {
@@ -114,6 +140,7 @@ export function PosTerminal({
           stock: item.stock,
           quantity: 1,
           note: "",
+          image: item.image,
         },
       ];
     });
@@ -134,24 +161,90 @@ export function PosTerminal({
     );
   }
 
-  function setNote(itemId: string, note: string) {
-    setCart((prev) =>
-      prev.map((c) => (c.itemId === itemId ? { ...c, note } : c))
-    );
-  }
-
   function reset() {
     setCart([]);
-    setDiscount(0);
+    setDiscountPercent(0);
     setPaidAmount(0);
     setCustomerName("");
+    setNote("");
     setOrderType("DINE_IN");
     setPaymentMethod("CASH");
+    setResumingDraftId(null);
+  }
+
+  function handleHold() {
+    if (!cart.length) {
+      toast.error("Keranjang kosong");
+      return;
+    }
+    setHolding(true);
+    holdPosOrder({
+      lines: cart.map((c) => ({
+        itemId: c.itemId,
+        quantity: c.quantity,
+        note: c.note || undefined,
+      })),
+      type: orderType,
+      paymentMethod,
+      discount: discountAmount,
+      paidAmount: 0,
+      customerName: customerName || undefined,
+      note: note || undefined,
+      resumingDraftId: resumingDraftId || undefined,
+    }).then((res) => {
+      setHolding(false);
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Pesanan ditahan");
+      reset();
+      router.refresh();
+    });
+  }
+
+  function recallDraft(draft: DraftOrder) {
+    setCart(
+      draft.items.map((it) => ({
+        itemId: it.itemId,
+        name: it.name,
+        price: it.price,
+        stock: Number.MAX_SAFE_INTEGER,
+        quantity: it.quantity,
+        note: it.note ?? "",
+        image: null,
+      }))
+    );
+    setOrderType(draft.type);
+    setCustomerName(draft.customerName ?? "");
+    setNote(draft.note ?? "");
+    setResumingDraftId(draft.id);
+    setDraftsOpen(false);
+  }
+
+  function handleDiscard(id: string) {
+    discardDraft(id).then((res) => {
+      if (!res.ok) {
+        toast.error(res.error);
+        return;
+      }
+      toast.success("Draft dihapus");
+      if (resumingDraftId === id) setResumingDraftId(null);
+      router.refresh();
+    });
   }
 
   function handleSubmit() {
     if (!cart.length) {
       toast.error("Keranjang kosong");
+      return;
+    }
+    if (!cashierName.trim()) {
+      toast.error("Nama kasir wajib diisi");
+      return;
+    }
+    if (!customerName.trim()) {
+      toast.error("Nama pelanggan wajib diisi");
       return;
     }
     if (paymentMethod === "CASH" && paidAmount < total) {
@@ -167,9 +260,11 @@ export function PosTerminal({
       })),
       type: orderType,
       paymentMethod,
-      discount,
+      discount: discountAmount,
       paidAmount: paymentMethod === "CASH" ? paidAmount : total,
       customerName: customerName || undefined,
+      note: note || undefined,
+      resumingDraftId: resumingDraftId || undefined,
     }).then((res) => {
       setSubmitting(false);
       if (!res.ok) {
@@ -179,6 +274,7 @@ export function PosTerminal({
       const paid = paymentMethod === "CASH" ? paidAmount : total;
       setLastReceipt({
         id: res.orderId,
+        orderNumber: res.orderNumber,
         transactionDate: new Date().toISOString(),
         cashierName,
         customerName: customerName || null,
@@ -191,7 +287,7 @@ export function PosTerminal({
           price: c.price,
         })),
         subtotal,
-        discount,
+        discount: discountAmount,
         tax,
         total,
         paidAmount: paid,
@@ -210,23 +306,45 @@ export function PosTerminal({
             Belum ada menu. Tambahkan item di halaman Menu.
           </p>
         ) : (
-          <Tabs
-            value={activeCategory}
-            onValueChange={(v) => setActiveCategory(v ?? "all")}
-            className="flex flex-1 flex-col overflow-hidden"
-          >
-            <div className="border-b px-3 py-2">
-              <TabsList className="flex-wrap">
-                <TabsTrigger value="all">Semua</TabsTrigger>
-                {menu.map((cat) => (
-                  <TabsTrigger key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
+          <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex items-center gap-3 border-b px-3 py-2">
+              <ScrollArea className="flex-1">
+                <ButtonGroup>
+                  <Button
+                    variant={activeCategory === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setActiveCategory("all")}
+                  >
+                    Semua
+                  </Button>
+                  {menu.map((cat) => (
+                    <Button
+                      key={cat.id}
+                      variant={activeCategory === cat.id ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveCategory(cat.id)}
+                    >
+                      {cat.name}
+                    </Button>
+                  ))}
+                </ButtonGroup>
+              </ScrollArea>
+              <div className="relative w-56 shrink-0">
+                <SearchNormal1
+                  size={16}
+                  color="currentColor"
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Cari menu..."
+                  className="pl-8"
+                />
+              </div>
             </div>
-            <div className="flex-1 overflow-auto p-3">
-              <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+            <ScrollArea className="flex-1">
+              <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
                 {visibleItems.map((item) => {
                   const inCart = cartQtyById.get(item.id) ?? 0;
                   const remaining = item.stock - inCart;
@@ -268,171 +386,97 @@ export function PosTerminal({
                   );
                 })}
               </div>
-            </div>
-          </Tabs>
+            </ScrollArea>
+          </div>
         )}
       </div>
 
-      <aside className="flex w-80 shrink-0 flex-col border-l">
-        <div className="flex items-center justify-between border-b px-3 py-2.5">
-          <span className="font-semibold">Keranjang</span>
-          {cart.length > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {cart.reduce((s, c) => s + c.quantity, 0)} item
-            </span>
-          )}
-        </div>
-        <div className="flex-1 overflow-auto p-2">
-          {cart.length === 0 ? (
-            <p className="p-2 text-sm text-muted-foreground">Keranjang kosong</p>
-          ) : (
-            <div className="flex flex-col gap-1.5">
-              {cart.map((c) => (
-                <div key={c.itemId} className="rounded-md border p-2">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-sm font-medium leading-tight">
-                      {c.name}
-                    </span>
-                    <span className="text-sm whitespace-nowrap">
-                      {rupiah(c.price * c.quantity)}
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <Button
-                      size="icon-xs"
-                      variant="outline"
-                      onClick={() => changeQty(c.itemId, -1)}
+      <CartPanel
+        items={cart}
+        itemCount={itemCount}
+        customerName={customerName}
+        onCustomerNameChange={setCustomerName}
+        orderType={orderType}
+        onOrderTypeChange={setOrderType}
+        note={note}
+        onNoteChange={setNote}
+        discountPercent={discountPercent}
+        onDiscountPercentChange={setDiscountPercent}
+        paymentMethod={paymentMethod}
+        onPaymentMethodChange={setPaymentMethod}
+        paidAmount={paidAmount}
+        onPaidAmountChange={setPaidAmount}
+        subtotal={subtotal}
+        discountAmount={discountAmount}
+        tax={tax}
+        taxRate={taxRate}
+        taxEnabled={taxEnabled}
+        total={total}
+        change={change}
+        submitting={submitting}
+        canPrintLast={!!lastReceipt}
+        enableDraftOrders={enableDraftOrders}
+        holding={holding}
+        resumingDraftId={resumingDraftId}
+        onChangeQty={changeQty}
+        onClear={reset}
+        onSubmit={handleSubmit}
+        onHold={handleHold}
+        onPrintLast={() => handlePrint()}
+      />
+
+      {enableDraftOrders && (
+        <Sheet open={draftsOpen} onOpenChange={setDraftsOpen}>
+          <SheetContent>
+            <SheetHeader>
+              <SheetTitle>Pesanan Tertahan</SheetTitle>
+              <SheetDescription>
+                Lanjutkan untuk menyelesaikan, atau buang draft.
+              </SheetDescription>
+            </SheetHeader>
+            <ScrollArea className="flex-1">
+              {drafts.length === 0 ? (
+                <p className="py-6 text-center text-sm text-muted-foreground">
+                  Tidak ada pesanan tertahan
+                </p>
+              ) : (
+                <ul className="divide-y">
+                  {drafts.map((d) => (
+                    <li
+                      key={d.id}
+                      className="flex items-center gap-2 px-4 py-2.5"
                     >
-                      -
-                    </Button>
-                    <span className="w-5 text-center text-sm">{c.quantity}</span>
-                    <Button
-                      size="icon-xs"
-                      variant="outline"
-                      onClick={() => changeQty(c.itemId, 1)}
-                    >
-                      +
-                    </Button>
-                  </div>
-                  <Input
-                    placeholder="Catatan…"
-                    value={c.note}
-                    onChange={(e) => setNote(c.itemId, e.target.value)}
-                    className="mt-1.5 h-7 text-xs"
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        <div className="flex flex-col gap-3 border-t p-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="customer">Nama Pelanggan (opsional)</Label>
-            <Input
-              id="customer"
-              value={customerName}
-              onChange={(e) => setCustomerName(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-2">
-            <div className="flex flex-1 flex-col gap-2">
-              <Label>Tipe</Label>
-              <Select
-                value={orderType}
-                onValueChange={(v) => setOrderType(v as typeof orderType)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="DINE_IN">Dine In</SelectItem>
-                    <SelectItem value="TAKE_AWAY">Take Away</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="flex flex-1 flex-col gap-2">
-              <Label>Bayar</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(v) => setPaymentMethod(v as typeof paymentMethod)}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectItem value="CASH">Tunai</SelectItem>
-                    <SelectItem value="QRIS">QRIS</SelectItem>
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="discount">Diskon (Rp)</Label>
-            <Input
-              id="discount"
-              type="number"
-              min={0}
-              value={discount || ""}
-              onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-            />
-          </div>
-          {paymentMethod === "CASH" && (
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="paid">Jumlah Bayar (Rp)</Label>
-              <Input
-                id="paid"
-                type="number"
-                min={0}
-                value={paidAmount || ""}
-                onChange={(e) => setPaidAmount(Number(e.target.value) || 0)}
-              />
-            </div>
-          )}
-
-          <div className="flex flex-col gap-1 text-sm">
-            <div className="flex justify-between">
-              <span>Subtotal</span>
-              <span>{rupiah(subtotal)}</span>
-            </div>
-            {discount > 0 && (
-              <div className="flex justify-between">
-                <span>Diskon</span>
-                <span>-{rupiah(discount)}</span>
-              </div>
-            )}
-            {tax > 0 && (
-              <div className="flex justify-between">
-                <span>Pajak ({taxRate}%)</span>
-                <span>{rupiah(tax)}</span>
-              </div>
-            )}
-            <div className="flex justify-between font-semibold">
-              <span>Total</span>
-              <span>{rupiah(total)}</span>
-            </div>
-            {paymentMethod === "CASH" && paidAmount > 0 && (
-              <div className="flex justify-between">
-                <span>Kembali</span>
-                <span>{rupiah(change)}</span>
-              </div>
-            )}
-          </div>
-
-          <Button onClick={handleSubmit} disabled={submitting || !cart.length}>
-            {submitting ? "Memproses..." : "Bayar & Simpan"}
-          </Button>
-          {lastReceipt && (
-            <Button variant="outline" onClick={() => handlePrint()}>
-              Cetak Struk Terakhir
-            </Button>
-          )}
-        </div>
-      </aside>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {d.customerName || "Tanpa nama"}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {d.items.length} item · {rupiah(d.total)}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="default"
+                        onClick={() => recallDraft(d)}
+                      >
+                        Lanjutkan
+                      </Button>
+                      <Button
+                        size="icon-sm"
+                        variant="destructive"
+                        onClick={() => handleDiscard(d.id)}
+                        aria-label="Buang draft"
+                      >
+                        <Trash size={16} color="currentColor" />
+                      </Button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </ScrollArea>
+          </SheetContent>
+        </Sheet>
+      )}
 
       <div className="hidden">
         {lastReceipt && (

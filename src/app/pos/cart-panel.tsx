@@ -1,0 +1,369 @@
+"use client";
+
+import Image from "next/image";
+import { Trash, Profile, Reserve, Bag2, Card, Box } from "iconsax-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/utils";
+
+export type OrderType = "DINE_IN" | "TAKE_AWAY";
+export type PaymentMethod = "CASH" | "CARD" | "QRIS";
+
+export type CartItem = {
+  itemId: string;
+  name: string;
+  price: number;
+  stock: number;
+  quantity: number;
+  note: string;
+  image: string | null;
+};
+
+export const rupiah = (n: number) =>
+  new Intl.NumberFormat("id-ID", {
+    style: "currency",
+    currency: "IDR",
+    minimumFractionDigits: 0,
+  }).format(n);
+
+const filledInput =
+  "border-transparent bg-muted/60 focus-visible:bg-background";
+
+type CartPanelProps = {
+  items: CartItem[];
+  itemCount: number;
+  customerName: string;
+  onCustomerNameChange: (v: string) => void;
+  orderType: OrderType;
+  onOrderTypeChange: (v: OrderType) => void;
+  note: string;
+  onNoteChange: (v: string) => void;
+  discountPercent: number;
+  onDiscountPercentChange: (v: number) => void;
+  paymentMethod: PaymentMethod;
+  onPaymentMethodChange: (v: PaymentMethod) => void;
+  paidAmount: number;
+  onPaidAmountChange: (v: number) => void;
+  subtotal: number;
+  discountAmount: number;
+  tax: number;
+  taxRate: number;
+  taxEnabled: boolean;
+  total: number;
+  change: number;
+  submitting: boolean;
+  canPrintLast: boolean;
+  enableDraftOrders: boolean;
+  holding: boolean;
+  resumingDraftId: string | null;
+  onChangeQty: (itemId: string, delta: number) => void;
+  onClear: () => void;
+  onSubmit: () => void;
+  onHold: () => void;
+  onPrintLast: () => void;
+};
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "CARD", label: "Card" },
+  { value: "CASH", label: "Cash" },
+  { value: "QRIS", label: "QRIS" },
+];
+
+export function CartPanel({
+  items,
+  itemCount,
+  customerName,
+  onCustomerNameChange,
+  orderType,
+  onOrderTypeChange,
+  note,
+  onNoteChange,
+  discountPercent,
+  onDiscountPercentChange,
+  paymentMethod,
+  onPaymentMethodChange,
+  paidAmount,
+  onPaidAmountChange,
+  subtotal,
+  discountAmount,
+  tax,
+  taxRate,
+  taxEnabled,
+  total,
+  change,
+  submitting,
+  canPrintLast,
+  enableDraftOrders,
+  holding,
+  resumingDraftId,
+  onChangeQty,
+  onClear,
+  onSubmit,
+  onHold,
+  onPrintLast,
+}: CartPanelProps) {
+  const hasItems = items.length > 0;
+
+  return (
+    <aside className="flex w-80 shrink-0 flex-col border-l">
+      <header className="flex items-center justify-between px-3 py-2.5">
+        <h2 className="text-base font-semibold">Keranjang</h2>
+        <div className="flex items-center gap-2">
+          {hasItems && (
+            <button
+              type="button"
+              onClick={onClear}
+              className="flex items-center gap-1 text-xs font-medium text-primary transition-opacity hover:opacity-70"
+            >
+              <Trash size={14} color="currentColor" />
+              Hapus semua
+            </button>
+          )}
+          <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-500">
+            {itemCount} item
+          </span>
+        </div>
+      </header>
+
+      <ScrollArea className="flex-1">
+        <div className="flex flex-col gap-2 px-2 pb-2">
+          <div className="relative">
+            <Profile
+              size={16}
+              color="currentColor"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+            />
+            <Input
+              value={customerName}
+              onChange={(e) => onCustomerNameChange(e.target.value)}
+              placeholder="Nama pelanggan..."
+              className={cn(filledInput, "h-9 rounded-lg pl-8")}
+            />
+          </div>
+
+          {hasItems ? (
+            <div className="flex flex-col gap-1.5">
+              {items.map((item) => (
+                <div
+                  key={item.itemId}
+                  className="flex items-center gap-2.5 rounded-lg bg-muted/60 p-2"
+                >
+                  <div className="relative size-9 shrink-0 overflow-hidden rounded-md bg-background">
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        sizes="36px"
+                        className="object-cover"
+                      />
+                    ) : (
+                      <span className="flex size-full items-center justify-center text-muted-foreground">
+                        <Box size={16} color="currentColor" />
+                      </span>
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium leading-tight">
+                      {item.name}
+                    </p>
+                    <p className="text-xs font-medium text-primary">
+                      {rupiah(item.price)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      size="icon-xs"
+                      variant="outline"
+                      onClick={() => onChangeQty(item.itemId, -1)}
+                      aria-label="Kurangi"
+                    >
+                      −
+                    </Button>
+                    <span className="w-4 text-center text-sm font-medium">
+                      {item.quantity}
+                    </span>
+                    <Button
+                      size="icon-xs"
+                      variant="outline"
+                      onClick={() => onChangeQty(item.itemId, 1)}
+                      aria-label="Tambah"
+                    >
+                      +
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Keranjang kosong
+            </p>
+          )}
+
+          <div className="mt-0.5 flex flex-col gap-1.5">
+            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+              Tipe Pesanan
+            </span>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => onOrderTypeChange("DINE_IN")}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
+                  orderType === "DINE_IN"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-muted/40 hover:bg-muted"
+                )}
+              >
+                <Reserve size={16} color="currentColor" />
+                Dine In
+              </button>
+              <button
+                type="button"
+                onClick={() => onOrderTypeChange("TAKE_AWAY")}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
+                  orderType === "TAKE_AWAY"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-muted/40 hover:bg-muted"
+                )}
+              >
+                <Bag2 size={16} color="currentColor" />
+                Take Away
+              </button>
+            </div>
+          </div>
+
+          <Textarea
+            value={note}
+            onChange={(e) => onNoteChange(e.target.value)}
+            placeholder="Catatan pesanan..."
+            rows={1}
+            className={cn(filledInput, "rounded-lg")}
+          />
+          <div className="relative">
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={discountPercent || ""}
+              onChange={(e) =>
+                onDiscountPercentChange(
+                  Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                )
+              }
+              placeholder="Diskon (%)"
+              className={cn(filledInput, "no-spinner h-9 rounded-lg")}
+            />
+          </div>
+        </div>
+      </ScrollArea>
+
+      <div className="flex flex-col gap-2.5 border-t px-3 py-2.5">
+        <div className="flex flex-col gap-1 text-sm">
+          <div className="flex justify-between text-muted-foreground">
+            <span>Subtotal</span>
+            <span>{rupiah(subtotal)}</span>
+          </div>
+          {discountAmount > 0 && (
+            <div className="flex justify-between text-muted-foreground">
+              <span>Diskon ({discountPercent}%)</span>
+              <span>-{rupiah(discountAmount)}</span>
+            </div>
+          )}
+          {taxEnabled && (
+            <div className="flex justify-between text-muted-foreground">
+              <span>PPN {taxRate}%</span>
+              <span>{rupiah(tax)}</span>
+            </div>
+          )}
+        </div>
+
+        <div className="flex items-center justify-between border-t pt-2.5">
+          <span className="text-base font-semibold">Total</span>
+          <span className="text-base font-bold text-primary">
+            {rupiah(total)}
+          </span>
+        </div>
+
+        {paymentMethod === "CASH" && (
+          <div className="relative">
+            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+              Rp
+            </span>
+            <Input
+              type="text"
+              inputMode="numeric"
+              value={paidAmount ? paidAmount.toLocaleString("id-ID") : ""}
+              onChange={(e) =>
+                onPaidAmountChange(Number(e.target.value.replace(/\D/g, "")) || 0)
+              }
+              placeholder="Jumlah bayar"
+              className={cn(filledInput, "h-9 rounded-lg pl-8")}
+            />
+            {paidAmount > 0 && (
+              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                Kembali {rupiah(change)}
+              </span>
+            )}
+          </div>
+        )}
+
+        <div className="grid grid-cols-3 gap-2">
+          {PAYMENT_METHODS.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              onClick={() => onPaymentMethodChange(m.value)}
+              className={cn(
+                "rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
+                paymentMethod === m.value
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-muted text-foreground hover:bg-muted/70"
+              )}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+
+        {enableDraftOrders && (
+          <Button
+            variant="outline"
+            onClick={onHold}
+            disabled={holding || !hasItems}
+            className="h-11 w-full rounded-lg text-sm"
+          >
+            {holding
+              ? "Menahan..."
+              : resumingDraftId
+                ? "Perbarui Draft"
+                : "Tahan"}
+          </Button>
+        )}
+
+        <Button
+          onClick={onSubmit}
+          disabled={submitting || !hasItems}
+          className="h-11 w-full rounded-lg text-sm"
+        >
+          <Card size={18} color="currentColor" />
+          {submitting ? "Memproses..." : `Bayar · ${rupiah(total)}`}
+        </Button>
+
+        {canPrintLast && (
+          <Button
+            variant="outline"
+            onClick={onPrintLast}
+            className="h-9 w-full rounded-lg"
+          >
+            Cetak Struk Terakhir
+          </Button>
+        )}
+      </div>
+    </aside>
+  );
+}

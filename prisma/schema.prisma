@@ -22,10 +22,12 @@ enum OrderType {
 
 enum PaymentMethod {
   CASH
+  CARD
   QRIS
 }
 
 enum OrderStatus {
+  DRAFT
   PENDING
   PENDING_PAYMENT
   WAITING_CONFIRMATION
@@ -45,6 +47,7 @@ model Partnership {
   createdAt DateTime @default(now())
 
   subPartnerships SubPartnership[]
+  cashiers        User[]
 }
 
 model SubPartnership {
@@ -72,6 +75,8 @@ model User {
   banned          Boolean   @default(false)
   banReason       String?
   banExpires      DateTime?
+  partnershipId    String?
+  partnership      Partnership? @relation(fields: [partnershipId], references: [id])
   subPartnershipId String?
   subPartnership   SubPartnership? @relation(fields: [subPartnershipId], references: [id])
   createdAt       DateTime  @default(now())
@@ -162,6 +167,7 @@ model Table {
 
 model Order {
   id              String       @id @default(cuid())
+  orderNumber     String       @unique
   transactionDate DateTime     @default(now())
   channel         OrderChannel @default(CASHIER)
 
@@ -216,6 +222,7 @@ model Setting {
   logoUrl       String?
   taxRate       Float    @default(10)
   taxEnabled    Boolean  @default(true)
+  enableDraftOrders Boolean @default(false)
   qrisImageUrl  String?
   receiptFooter String?  @default("Terima Kasih")
   printerName   String?

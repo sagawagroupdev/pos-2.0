@@ -28,12 +28,29 @@ export function computeTotals(
   return { subtotal, discount, tax, total };
 }
 
+function generateOrderNumber(date: Date): string {
+  const datePart = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Jakarta",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  })
+    .format(date)
+    .replace(/-/g, "");
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let rand = "";
+  for (let i = 0; i < 4; i++) {
+    rand += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return `TRX-${datePart}-${rand}`;
+}
+
 export type CreateOrderInput = {
   lines: CartLine[];
   channel: "CASHIER" | "QR";
   type: "DINE_IN" | "TAKE_AWAY";
-  paymentMethod: "CASH" | "QRIS";
-  status: "PENDING" | "PENDING_PAYMENT" | "WAITING_CONFIRMATION" | "PAID";
+  paymentMethod: "CASH" | "CARD" | "QRIS";
+  status: "DRAFT" | "PENDING" | "PENDING_PAYMENT" | "WAITING_CONFIRMATION" | "PAID";
   discount?: number;
   paidAmount?: number;
   customerName?: string;
@@ -42,6 +59,8 @@ export type CreateOrderInput = {
   cashierId?: string;
   tableId?: string;
   tableNumber?: string;
+  skipStock?: boolean;
+  deleteDraftId?: string;
 };
 
 export async function createOrder(input: CreateOrderInput) {
@@ -81,44 +100,72 @@ export async function createOrder(input: CreateOrderInput) {
       : 0;
 
   return prisma.$transaction(async (tx) => {
-    const order = await tx.order.create({
-      data: {
-        channel: input.channel,
-        type: input.type,
-        paymentMethod: input.paymentMethod,
-        status: input.status,
-        cashierId: input.cashierId ?? null,
-        tableId: input.tableId ?? null,
-        tableNumber: input.tableNumber ?? null,
-        customerName: input.customerName ?? null,
-        customerPhone: input.customerPhone ?? null,
-        note: input.note ?? null,
-        subtotal: totals.subtotal,
-        discount: totals.discount,
-        tax: totals.tax,
-        total: totals.total,
-        paidAmount,
-        changeAmount,
-        items: {
-          create: resolved.map((r) => ({
-            itemId: r.item.id,
-            name: r.item.name,
-            quantity: r.quantity,
-            price: r.item.price,
-            note: r.note ?? null,
-          })),
-        },
-      },
-      include: { items: true },
-    });
-
-    for (const r of resolved) {
-      await tx.item.update({
-        where: { id: r.item.id },
-        data: { stock: { decrement: r.quantity } },
+    if (input.deleteDraftId) {
+      await tx.order.deleteMany({
+        where: { id: input.deleteDraftId, status: "DRAFT" },
       });
+    }
+
+    let order;
+    for (let attempt = 0; ; attempt++) {
+      const orderNumber = generateOrderNumber(new Date());
+      try {
+        order = await tx.order.create({
+          data: {
+            orderNumber,
+            channel: input.channel,
+            type: input.type,
+            paymentMethod: input.paymentMethod,
+            status: input.status,
+            cashierId: input.cashierId ?? null,
+            tableId: input.tableId ?? null,
+            tableNumber: input.tableNumber ?? null,
+            customerName: input.customerName ?? null,
+            customerPhone: input.customerPhone ?? null,
+            note: input.note ?? null,
+            subtotal: totals.subtotal,
+            discount: totals.discount,
+            tax: totals.tax,
+            total: totals.total,
+            paidAmount,
+            changeAmount,
+            items: {
+              create: resolved.map((r) => ({
+                itemId: r.item.id,
+                name: r.item.name,
+                quantity: r.quantity,
+                price: r.item.price,
+                note: r.note ?? null,
+              })),
+            },
+          },
+          include: { items: true },
+        });
+        break;
+      } catch (e) {
+        if (isUniqueOrderNumberError(e) && attempt < 5) continue;
+        throw e;
+      }
+    }
+
+    if (!input.skipStock) {
+      for (const r of resolved) {
+        await tx.item.update({
+          where: { id: r.item.id },
+          data: { stock: { decrement: r.quantity } },
+        });
+      }
     }
 
     return order;
   });
+}
+
+function isUniqueOrderNumberError(e: unknown): boolean {
+  return (
+    typeof e === "object" &&
+    e !== null &&
+    "code" in e &&
+    (e as { code?: string }).code === "P2002"
+  );
 }

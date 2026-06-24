@@ -10,6 +10,7 @@ export type StoreSettings = {
   logoUrl: string | null;
   taxRate: number;
   taxEnabled: boolean;
+  enableDraftOrders: boolean;
   qrisImageUrl: string | null;
   receiptFooter: string | null;
   printerName: string | null;

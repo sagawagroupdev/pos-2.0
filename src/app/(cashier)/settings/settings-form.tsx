@@ -19,6 +19,9 @@ import type { StoreSettings } from "@/lib/settings";
 export function SettingsForm({ settings }: { settings: StoreSettings }) {
   const [pending, startTransition] = useTransition();
   const [taxEnabled, setTaxEnabled] = useState(settings.taxEnabled);
+  const [enableDraftOrders, setEnableDraftOrders] = useState(
+    settings.enableDraftOrders
+  );
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
@@ -107,6 +110,27 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
               defaultValue={settings.taxRate}
             />
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Pesanan Draft</CardTitle>
+          <CardDescription>
+            Izinkan kasir menahan pesanan untuk diselesaikan nanti.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="enableDraftOrders"
+              checked={enableDraftOrders}
+              onChange={(e) => setEnableDraftOrders(e.target.checked)}
+              className="size-4"
+            />
+            Aktifkan pesanan draft (tahan order)
+          </label>
         </CardContent>
       </Card>
 

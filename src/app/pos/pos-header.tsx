@@ -3,8 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Home2, Maximize3, Maximize4, Notification } from "iconsax-react";
+import { toast } from "sonner";
+import { Home2, Maximize2, Notification, Save2, MenuBoard } from "iconsax-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useCashier } from "./cashier-context";
+import { useDraftsUI } from "./drafts-ui-context";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -22,7 +27,29 @@ export function PosHeader({
   cashierId: string;
 }) {
   const router = useRouter();
+  const { cashierName, setCashierName } = useCashier();
+  const { enabled: draftsEnabled, count: draftCount, setOpen: setDraftsOpen } =
+    useDraftsUI();
+  const [draftName, setDraftName] = useState(cashierName);
+  const [prevCashierName, setPrevCashierName] = useState(cashierName);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  if (cashierName !== prevCashierName) {
+    setPrevCashierName(cashierName);
+    setDraftName(cashierName);
+  }
+
+  const dirty = draftName.trim() !== cashierName;
+
+  function saveCashier() {
+    const next = draftName.trim();
+    if (!next) {
+      toast.error("Nama kasir tidak boleh kosong");
+      return;
+    }
+    setCashierName(next);
+    toast.success("Nama kasir disimpan");
+  }
 
   useEffect(() => {
     const onChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -60,7 +87,47 @@ export function PosHeader({
         </BreadcrumbList>
       </Breadcrumb>
 
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <Label htmlFor="cashier-name" className="text-muted-foreground">
+            Kasir:
+          </Label>
+          <Input
+            id="cashier-name"
+            value={draftName}
+            onChange={(e) => setDraftName(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") saveCashier();
+            }}
+            placeholder="Nama kasir"
+            className="h-8 w-40"
+          />
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={saveCashier}
+            disabled={!dirty}
+            aria-label="Simpan nama kasir"
+          >
+            <Save2 size={20} variant="Linear" color="currentColor" />
+          </Button>
+        </div>
+        {draftsEnabled && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setDraftsOpen(true)}
+            aria-label="Pesanan tertahan"
+            className="relative"
+          >
+            <MenuBoard size={24} variant="Linear" color="currentColor" />
+            {draftCount > 0 && (
+              <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                {draftCount}
+              </span>
+            )}
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
@@ -76,9 +143,9 @@ export function PosHeader({
           aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
         >
           {isFullscreen ? (
-            <Maximize3 size={24} variant="Linear" color="currentColor" />
+            <Maximize2 size={24} variant="Linear" color="currentColor" />
           ) : (
-            <Maximize4 size={24} variant="Linear" color="currentColor" />
+            <Maximize2 size={24} variant="Linear" color="currentColor" />
           )}
         </Button>
       </div>

@@ -6,7 +6,7 @@ export default async function OrdersPage() {
   const session = await requireRole("CASHIER");
 
   const orders = await prisma.order.findMany({
-    where: { cashierId: session.user.id },
+    where: { cashierId: session.user.id, status: { not: "DRAFT" } },
     orderBy: { transactionDate: "desc" },
     take: 100,
     include: { items: true },
@@ -14,6 +14,7 @@ export default async function OrdersPage() {
 
   const rows: OrderRow[] = orders.map((o) => ({
     id: o.id,
+    orderNumber: o.orderNumber,
     transactionDate: o.transactionDate.toISOString(),
     channel: o.channel,
     type: o.type,

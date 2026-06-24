@@ -15,6 +15,7 @@ export default async function KasirPage() {
         username: true,
         banned: true,
         createdAt: true,
+        partnership: { select: { name: true } },
         subPartnership: {
           select: {
             name: true,
@@ -39,7 +40,8 @@ export default async function KasirPage() {
     username: c.username,
     banned: c.banned,
     createdAt: c.createdAt.toISOString(),
-    partnershipName: c.subPartnership?.partnership.name ?? null,
+    partnershipName:
+      c.partnership?.name ?? c.subPartnership?.partnership.name ?? null,
     subPartnershipName: c.subPartnership?.name ?? null,
   }));
 

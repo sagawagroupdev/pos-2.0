@@ -75,11 +75,16 @@ export function CashierManager({
   }
 
   function handleCreate(formData: FormData) {
-    if (!selectedSub) {
-      toast.error("Kemitraan dan sub kemitraan wajib dipilih");
+    if (!selectedPartnership) {
+      toast.error("Kemitraan wajib dipilih");
       return;
     }
-    formData.set("subPartnershipId", selectedSub);
+    if (subOptions.length > 0 && !selectedSub) {
+      toast.error("Sub kemitraan wajib dipilih");
+      return;
+    }
+    formData.set("partnershipId", selectedPartnership);
+    formData.set("subPartnershipId", subOptions.length > 0 ? selectedSub : "");
     startTransition(async () => {
       const res = await createCashier(formData);
       if (res.ok) {
@@ -171,27 +176,28 @@ export function CashierManager({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Sub Kemitraan</Label>
-                  <Select
-                    value={selectedSub}
-                    onValueChange={(v) => setSelectedSub(v ?? "")}
-                    disabled={!selectedPartnership}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih sub kemitraan" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        {subOptions.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.name}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {subOptions.length > 0 && (
+                  <div className="space-y-2">
+                    <Label>Sub Kemitraan</Label>
+                    <Select
+                      value={selectedSub}
+                      onValueChange={(v) => setSelectedSub(v ?? "")}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih sub kemitraan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {subOptions.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button type="submit" disabled={pending}>

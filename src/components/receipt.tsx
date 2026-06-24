@@ -4,12 +4,13 @@ import { forwardRef } from "react";
 
 export type ReceiptData = {
   id: string;
+  orderNumber: string;
   transactionDate: string;
   cashierName: string | null;
   customerName: string | null;
   tableNumber: string | null;
   type: "DINE_IN" | "TAKE_AWAY";
-  paymentMethod: "CASH" | "QRIS";
+  paymentMethod: "CASH" | "CARD" | "QRIS";
   items: { name: string; quantity: number; price: number }[];
   subtotal: number;
   discount: number;
@@ -29,7 +30,7 @@ export type ReceiptStore = {
 const fmt = (n: number) => new Intl.NumberFormat("id-ID").format(n);
 
 const typeLabel = { DINE_IN: "Dine In", TAKE_AWAY: "Take Away" };
-const payLabel = { CASH: "Tunai", QRIS: "QRIS" };
+const payLabel = { CASH: "Tunai", CARD: "Kartu", QRIS: "QRIS" };
 
 export const Receipt = forwardRef<
   HTMLDivElement,
@@ -48,7 +49,7 @@ export const Receipt = forwardRef<
       {store.phone && <div className="center">No. Telp: {store.phone}</div>}
       <div className="sep">================================</div>
       <div>Tgl: {dateStr}</div>
-      <div>ID : {data.id.slice(0, 8).toUpperCase()}</div>
+      <div>ID : {data.orderNumber}</div>
       {data.cashierName && <div>Kasir: {data.cashierName}</div>}
       {data.customerName && (
         <div>
