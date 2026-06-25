@@ -5,22 +5,16 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
-import { submitPosOrder, holdPosOrder, discardDraft } from "./actions";
+import { submitPosOrder, holdPosOrder } from "./actions";
 import { useCashier } from "./cashier-context";
 import { useDraftsUI } from "./drafts-ui-context";
 import type { MenuCategory } from "@/lib/menu";
-import { SearchNormal1, Trash } from "iconsax-react";
+import { SearchNormal1 } from "iconsax-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+import { DraftSheet } from "./draft-sheet";
 import { Receipt, type ReceiptData, type ReceiptStore } from "@/components/receipt";
 import {
   CartPanel,
@@ -29,6 +23,12 @@ import {
   type OrderType,
   type PaymentMethod,
 } from "./cart-panel";
+
+export type DraftStatus =
+  | "DRAFT"
+  | "PENDING"
+  | "PENDING_PAYMENT"
+  | "WAITING_CONFIRMATION";
 
 export type DraftItem = {
   itemId: string;
@@ -42,9 +42,19 @@ export type DraftOrder = {
   id: string;
   orderNumber: string;
   type: OrderType;
+  status: DraftStatus;
+  channel: "CASHIER" | "QR";
+  paymentMethod: PaymentMethod;
   customerName: string | null;
+  customerPhone: string | null;
+  tableNumber: string | null;
   note: string | null;
+  subtotal: number;
+  discount: number;
+  tax: number;
   total: number;
+  paidAmount: number;
+  changeAmount: number;
   createdAt: string;
   items: DraftItem[];
 };
@@ -56,6 +66,7 @@ export function PosTerminal({
   taxEnabled,
   enableDraftOrders,
   drafts,
+  resumeId,
 }: {
   menu: MenuCategory[];
   store: ReceiptStore;
@@ -63,6 +74,7 @@ export function PosTerminal({
   taxEnabled: boolean;
   enableDraftOrders: boolean;
   drafts: DraftOrder[];
+  resumeId: string | null;
 }) {
   const router = useRouter();
   const { cashierName } = useCashier();
@@ -80,6 +92,14 @@ export function PosTerminal({
   const [search, setSearch] = useState("");
   const [resumingDraftId, setResumingDraftId] = useState<string | null>(null);
   const [holding, setHolding] = useState(false);
+  const [resumedId, setResumedId] = useState<string | null>(null);
+
+  // Auto-load a draft when arriving via /pos?resume=<id> (from Orders Dashboard).
+  if (resumeId && resumeId !== resumedId) {
+    setResumedId(resumeId);
+    const target = drafts.find((d) => d.id === resumeId);
+    if (target) loadDraftIntoCart(target);
+  }
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef: receiptRef });
@@ -203,7 +223,7 @@ export function PosTerminal({
     });
   }
 
-  function recallDraft(draft: DraftOrder) {
+  function loadDraftIntoCart(draft: DraftOrder) {
     setCart(
       draft.items.map((it) => ({
         itemId: it.itemId,
@@ -216,22 +236,20 @@ export function PosTerminal({
       }))
     );
     setOrderType(draft.type);
+    setPaymentMethod(draft.paymentMethod);
+    setDiscountPercent(
+      draft.subtotal > 0
+        ? Math.round((draft.discount / draft.subtotal) * 100)
+        : 0
+    );
     setCustomerName(draft.customerName ?? "");
     setNote(draft.note ?? "");
     setResumingDraftId(draft.id);
-    setDraftsOpen(false);
   }
 
-  function handleDiscard(id: string) {
-    discardDraft(id).then((res) => {
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
-      }
-      toast.success("Draft dihapus");
-      if (resumingDraftId === id) setResumingDraftId(null);
-      router.refresh();
-    });
+  function recallDraft(draft: DraftOrder) {
+    loadDraftIntoCart(draft);
+    setDraftsOpen(false);
   }
 
   function handleSubmit() {
@@ -426,56 +444,12 @@ export function PosTerminal({
       />
 
       {enableDraftOrders && (
-        <Sheet open={draftsOpen} onOpenChange={setDraftsOpen}>
-          <SheetContent>
-            <SheetHeader>
-              <SheetTitle>Pesanan Tertahan</SheetTitle>
-              <SheetDescription>
-                Lanjutkan untuk menyelesaikan, atau buang draft.
-              </SheetDescription>
-            </SheetHeader>
-            <ScrollArea className="flex-1">
-              {drafts.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">
-                  Tidak ada pesanan tertahan
-                </p>
-              ) : (
-                <ul className="divide-y">
-                  {drafts.map((d) => (
-                    <li
-                      key={d.id}
-                      className="flex items-center gap-2 px-4 py-2.5"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium">
-                          {d.customerName || "Tanpa nama"}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {d.items.length} item · {rupiah(d.total)}
-                        </p>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => recallDraft(d)}
-                      >
-                        Lanjutkan
-                      </Button>
-                      <Button
-                        size="icon-sm"
-                        variant="destructive"
-                        onClick={() => handleDiscard(d.id)}
-                        aria-label="Buang draft"
-                      >
-                        <Trash size={16} color="currentColor" />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </ScrollArea>
-          </SheetContent>
-        </Sheet>
+        <DraftSheet
+          open={draftsOpen}
+          onOpenChange={setDraftsOpen}
+          drafts={drafts}
+          onContinue={recallDraft}
+        />
       )}
 
       <div className="hidden">

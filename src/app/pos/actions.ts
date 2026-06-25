@@ -6,6 +6,15 @@ import { requireRole } from "@/lib/session";
 import { createOrder } from "@/lib/order";
 import { invalidateMenuCache } from "@/lib/menu";
 import { prisma } from "@/lib/db";
+import { notifyOrderUpdated } from "@/lib/realtime";
+
+const HELD_STATUSES = [
+  "DRAFT",
+  "PENDING",
+  "PENDING_PAYMENT",
+  "WAITING_CONFIRMATION",
+] as const;
+const heldStatusSchema = z.enum(HELD_STATUSES);
 
 const lineSchema = z.object({
   itemId: z.string().min(1),
@@ -57,6 +66,7 @@ export async function submitPosOrder(
     });
 
     await invalidateMenuCache();
+    await notifyOrderUpdated(session.user.id);
     revalidatePath("/orders");
     revalidatePath("/pos");
     return { ok: true, orderId: order.id, orderNumber: order.orderNumber };
@@ -91,7 +101,9 @@ export async function holdPosOrder(input: PosOrderInput): Promise<SubmitResult> 
       deleteDraftId: parsed.data.resumingDraftId,
     });
 
+    await notifyOrderUpdated(session.user.id);
     revalidatePath("/pos");
+    revalidatePath("/orders");
     return { ok: true, orderId: order.id, orderNumber: order.orderNumber };
   } catch (e) {
     return {
@@ -104,11 +116,50 @@ export async function holdPosOrder(input: PosOrderInput): Promise<SubmitResult> 
 export async function discardDraft(orderId: string): Promise<ActionResult> {
   const session = await requireRole("CASHIER");
   const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (!order || order.cashierId !== session.user.id || order.status !== "DRAFT") {
-    return { ok: false, error: "Draft tidak ditemukan" };
+  // Only cashier holds are plain-deletable: they were created with skipStock,
+  // via cancelQrOrder (which restocks) instead.
+  if (
+    !order ||
+    order.cashierId !== session.user.id ||
+    order.channel !== "CASHIER" ||
+    !HELD_STATUSES.includes(order.status as (typeof HELD_STATUSES)[number])
+  ) {
+    return { ok: false, error: "Pesanan tidak ditemukan" };
   }
 
   await prisma.order.delete({ where: { id: orderId } });
+  await notifyOrderUpdated(session.user.id);
   revalidatePath("/pos");
+  revalidatePath("/orders");
+  return { ok: true };
+}
+
+export async function updateOrderStatus(
+  orderId: string,
+  status: (typeof HELD_STATUSES)[number]
+): Promise<ActionResult> {
+  const session = await requireRole("CASHIER");
+
+  const parsed = heldStatusSchema.safeParse(status);
+  if (!parsed.success) {
+    return { ok: false, error: "Status tidak valid" };
+  }
+
+  const order = await prisma.order.findUnique({ where: { id: orderId } });
+  if (
+    !order ||
+    order.cashierId !== session.user.id ||
+    !HELD_STATUSES.includes(order.status as (typeof HELD_STATUSES)[number])
+  ) {
+    return { ok: false, error: "Pesanan tidak ditemukan" };
+  }
+
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { status: parsed.data },
+  });
+  await notifyOrderUpdated(session.user.id);
+  revalidatePath("/pos");
+  revalidatePath("/orders");
   return { ok: true };
 }

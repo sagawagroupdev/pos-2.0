@@ -3,7 +3,6 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,6 +29,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  HELD_STATUS_OPTIONS,
+  isHeldStatus,
+  type OrderStatus,
+  type HeldStatus,
+} from "@/lib/order-status";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { updateOrderStatus, discardDraft } from "@/app/pos/actions";
 import { confirmQrOrder, cancelQrOrder } from "./confirm-actions";
 
 export type OrderRow = {
@@ -38,7 +54,7 @@ export type OrderRow = {
   transactionDate: string;
   channel: "CASHIER" | "QR";
   type: "DINE_IN" | "TAKE_AWAY";
-  status: "DRAFT" | "PENDING" | "PENDING_PAYMENT" | "WAITING_CONFIRMATION" | "PAID" | "CANCELLED";
+  status: OrderStatus;
   paymentMethod: "CASH" | "CARD" | "QRIS";
   customerName: string | null;
   tableNumber: string | null;
@@ -57,27 +73,6 @@ const rupiah = (n: number) =>
     currency: "IDR",
     minimumFractionDigits: 0,
   }).format(n);
-
-const statusLabel: Record<OrderRow["status"], string> = {
-  DRAFT: "Draft",
-  PENDING: "Pending",
-  PENDING_PAYMENT: "Menunggu Bayar",
-  WAITING_CONFIRMATION: "Menunggu Konfirmasi",
-  PAID: "Lunas",
-  CANCELLED: "Dibatalkan",
-};
-
-const statusVariant: Record<
-  OrderRow["status"],
-  "default" | "secondary" | "destructive" | "outline"
-> = {
-  DRAFT: "outline",
-  PENDING: "outline",
-  PENDING_PAYMENT: "secondary",
-  WAITING_CONFIRMATION: "secondary",
-  PAID: "default",
-  CANCELLED: "destructive",
-};
 
 export function OrdersView({ orders }: { orders: OrderRow[] }) {
   const router = useRouter();
@@ -103,6 +98,30 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
       const res = await cancelQrOrder(id);
       if (res.ok) {
         toast.success("Pesanan dibatalkan");
+        setSelected(null);
+        router.refresh();
+      } else toast.error(res.error);
+    });
+  }
+
+  function handleStatusChange(id: string, status: HeldStatus) {
+    startTransition(async () => {
+      const res = await updateOrderStatus(id, status);
+      if (res.ok) toast.success("Status diperbarui");
+      else toast.error(res.error);
+    });
+  }
+
+  function handleContinue(id: string) {
+    router.push(`/pos?resume=${id}`);
+  }
+
+  function handleDelete(id: string) {
+    if (!confirm("Hapus pesanan tertahan ini?")) return;
+    startTransition(async () => {
+      const res = await discardDraft(id);
+      if (res.ok) {
+        toast.success("Pesanan dihapus");
         setSelected(null);
         router.refresh();
       } else toast.error(res.error);
@@ -195,9 +214,7 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
                 <TableCell>{o.customerName ?? "-"}</TableCell>
                 <TableCell>{rupiah(o.total)}</TableCell>
                 <TableCell>
-                  <Badge variant={statusVariant[o.status]}>
-                    {statusLabel[o.status]}
-                  </Badge>
+                  <StatusBadge status={o.status} />
                 </TableCell>
               </TableRow>
             ))
@@ -263,25 +280,70 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
               </div>
             </div>
           )}
-          {selected &&
-            selected.status !== "PAID" &&
-            selected.status !== "CANCELLED" && (
-              <DialogFooter>
-                <Button
-                  variant="destructive"
+          {selected && isHeldStatus(selected.status) && (
+            <DialogFooter className="sm:justify-between">
+              <DropdownMenu>
+                <DropdownMenuTrigger
+                  render={<Button variant="outline" />}
                   disabled={pending}
-                  onClick={() => handleCancel(selected.id)}
                 >
-                  Batalkan
-                </Button>
-                <Button
-                  disabled={pending}
-                  onClick={() => handleConfirm(selected.id)}
-                >
-                  Konfirmasi Lunas
-                </Button>
-              </DialogFooter>
-            )}
+                  Ubah Status
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuRadioGroup
+                    value={selected.status}
+                    onValueChange={(v) =>
+                      v && handleStatusChange(selected.id, v as HeldStatus)
+                    }
+                  >
+                    <DropdownMenuLabel>Status Pesanan</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {HELD_STATUS_OPTIONS.map((opt) => (
+                      <DropdownMenuRadioItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <div className="flex gap-2">
+                {selected.channel === "CASHIER" ? (
+                  <>
+                    <Button
+                      variant="outline"
+                      disabled={pending}
+                      onClick={() => handleContinue(selected.id)}
+                    >
+                      Lanjutkan
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      disabled={pending}
+                      onClick={() => handleDelete(selected.id)}
+                    >
+                      Hapus
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button
+                      variant="destructive"
+                      disabled={pending}
+                      onClick={() => handleCancel(selected.id)}
+                    >
+                      Batalkan
+                    </Button>
+                    <Button
+                      disabled={pending}
+                      onClick={() => handleConfirm(selected.id)}
+                    >
+                      Konfirmasi Lunas
+                    </Button>
+                  </>
+                )}
+              </div>
+            </DialogFooter>
+          )}
         </DialogContent>
       </Dialog>
     </div>

@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { Trash, Profile, Reserve, Bag2, Card, Box } from "iconsax-react";
 import { Button } from "@/components/ui/button";
+import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -312,47 +313,45 @@ export function CartPanel({
           </div>
         )}
 
-        <div className="grid grid-cols-3 gap-2">
+        <ButtonGroup className="w-full">
           {PAYMENT_METHODS.map((m) => (
-            <button
+            <Button
               key={m.value}
               type="button"
+              variant={paymentMethod === m.value ? "default" : "outline"}
               onClick={() => onPaymentMethodChange(m.value)}
-              className={cn(
-                "rounded-lg px-2.5 py-2 text-sm font-medium transition-colors",
-                paymentMethod === m.value
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-foreground hover:bg-muted/70"
-              )}
+              className="h-9 flex-1"
             >
               {m.label}
-            </button>
+            </Button>
           ))}
-        </div>
+        </ButtonGroup>
 
-        {enableDraftOrders && (
+        <div className="flex gap-2">
+          {enableDraftOrders && (
+            <Button
+              variant="outline"
+              onClick={onHold}
+              disabled={holding || !hasItems}
+              className="h-11 flex-1 rounded-lg text-sm"
+            >
+              {holding
+                ? "Menahan..."
+                : resumingDraftId
+                  ? "Perbarui Draft"
+                  : "Tahan"}
+            </Button>
+          )}
+
           <Button
-            variant="outline"
-            onClick={onHold}
-            disabled={holding || !hasItems}
-            className="h-11 w-full rounded-lg text-sm"
+            onClick={onSubmit}
+            disabled={submitting || !hasItems}
+            className="h-11 flex-1 rounded-lg text-sm"
           >
-            {holding
-              ? "Menahan..."
-              : resumingDraftId
-                ? "Perbarui Draft"
-                : "Tahan"}
+            <Card size={18} color="currentColor" />
+            {submitting ? "Memproses..." : `Bayar · ${rupiah(total)}`}
           </Button>
-        )}
-
-        <Button
-          onClick={onSubmit}
-          disabled={submitting || !hasItems}
-          className="h-11 w-full rounded-lg text-sm"
-        >
-          <Card size={18} color="currentColor" />
-          {submitting ? "Memproses..." : `Bayar · ${rupiah(total)}`}
-        </Button>
+        </div>
 
         {canPrintLast && (
           <Button

@@ -6,7 +6,7 @@ export default async function OrdersPage() {
   const session = await requireRole("CASHIER");
 
   const orders = await prisma.order.findMany({
-    where: { cashierId: session.user.id, status: { not: "DRAFT" } },
+    where: { cashierId: session.user.id },
     orderBy: { transactionDate: "desc" },
     take: 100,
     include: { items: true },

@@ -6,6 +6,7 @@ import Pusher from "pusher-js";
 import { toast } from "sonner";
 
 const NEW_QR_ORDER_EVENT = "new-qr-order";
+const ORDER_UPDATED_EVENT = "order-updated";
 
 type NewQrOrderPayload = {
   orderId: string;
@@ -80,6 +81,10 @@ export function QrOrderNotifier({ cashierId }: { cashierId: string }) {
           onClick: () => router.push("/orders"),
         },
       });
+      router.refresh();
+    });
+
+    channel.bind(ORDER_UPDATED_EVENT, () => {
       router.refresh();
     });
 

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/session";
+import { notifyOrderUpdated } from "@/lib/realtime";
 
 export type ActionResult = { ok: boolean; error?: string };
 
@@ -19,7 +20,9 @@ export async function confirmQrOrder(orderId: string): Promise<ActionResult> {
     where: { id: orderId },
     data: { status: "PAID", paidAmount: order.total },
   });
+  await notifyOrderUpdated(session.user.id);
   revalidatePath("/orders");
+  revalidatePath("/pos");
   return { ok: true };
 }
 
@@ -47,6 +50,8 @@ export async function cancelQrOrder(orderId: string): Promise<ActionResult> {
     });
   });
 
+  await notifyOrderUpdated(session.user.id);
   revalidatePath("/orders");
+  revalidatePath("/pos");
   return { ok: true };
 }

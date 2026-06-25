@@ -26,6 +26,7 @@ if (process.env.NODE_ENV !== "production" && pusher) {
 }
 
 export const NEW_QR_ORDER_EVENT = "new-qr-order";
+export const ORDER_UPDATED_EVENT = "order-updated";
 
 export function cashierChannel(cashierId: string) {
   return `cashier-${cashierId}`;
@@ -50,6 +51,15 @@ export async function notifyNewQrOrder(
       NEW_QR_ORDER_EVENT,
       payload
     );
+  } catch {
+    // realtime delivery is best-effort; dashboard polling is the fallback
+  }
+}
+
+export async function notifyOrderUpdated(cashierId: string) {
+  if (!pusher) return;
+  try {
+    await pusher.trigger(cashierChannel(cashierId), ORDER_UPDATED_EVENT, {});
   } catch {
     // realtime delivery is best-effort; dashboard polling is the fallback
   }

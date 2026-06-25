@@ -7,14 +7,31 @@ import { PosTerminal, type DraftOrder } from "./pos-terminal";
 import { CashierProvider } from "./cashier-context";
 import { DraftsUIProvider } from "./drafts-ui-context";
 
-export default async function PosPage() {
+export default async function PosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ resume?: string }>;
+}) {
   const session = await requireRole("CASHIER");
-  const [menu, settings] = await Promise.all([getMenu(), getSettings()]);
+  const [menu, settings, { resume }] = await Promise.all([
+    getMenu(),
+    getSettings(),
+    searchParams,
+  ]);
 
   let drafts: DraftOrder[] = [];
   if (settings.enableDraftOrders) {
     const rows = await prisma.order.findMany({
-      where: { cashierId: session.user.id, status: "DRAFT" },
+      where: {
+        cashierId: session.user.id,
+        // Cashier holds only — these were created with skipStock, so no stock
+        // is reserved. QR orders (which reserved stock) are handled in the
+        // Orders Dashboard via confirm/cancel instead.
+        channel: "CASHIER",
+        status: {
+          in: ["DRAFT", "PENDING", "PENDING_PAYMENT", "WAITING_CONFIRMATION"],
+        },
+      },
       orderBy: { createdAt: "desc" },
       include: { items: true },
     });
@@ -22,9 +39,19 @@ export default async function PosPage() {
       id: o.id,
       orderNumber: o.orderNumber,
       type: o.type,
+      status: o.status as DraftOrder["status"],
+      channel: o.channel,
+      paymentMethod: o.paymentMethod,
       customerName: o.customerName,
+      customerPhone: o.customerPhone,
+      tableNumber: o.tableNumber,
       note: o.note,
+      subtotal: o.subtotal,
+      discount: o.discount,
+      tax: o.tax,
       total: o.total,
+      paidAmount: o.paidAmount,
+      changeAmount: o.changeAmount,
       createdAt: o.createdAt.toISOString(),
       items: o.items.map((it) => ({
         itemId: it.itemId,
@@ -56,6 +83,7 @@ export default async function PosPage() {
             taxEnabled={settings.taxEnabled}
             enableDraftOrders={settings.enableDraftOrders}
             drafts={drafts}
+            resumeId={resume ?? null}
           />
         </DraftsUIProvider>
       </CashierProvider>
