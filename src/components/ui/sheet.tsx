@@ -15,13 +15,24 @@ function SheetTrigger({ ...props }: DialogPrimitive.Trigger.Props) {
   return <DialogPrimitive.Trigger data-slot="sheet-trigger" {...props} />
 }
 
+const SHEET_SIDE = {
+  right:
+    "inset-y-0 right-0 h-full w-80 max-w-[calc(100%-2rem)] data-open:slide-in-from-right data-closed:slide-out-to-right",
+  left: "inset-y-0 left-0 h-full w-80 max-w-[calc(100%-2rem)] data-open:slide-in-from-left data-closed:slide-out-to-left",
+  top: "inset-x-0 top-0 h-auto max-h-[90vh] w-full rounded-b-xl data-open:slide-in-from-top data-closed:slide-out-to-top",
+  bottom:
+    "inset-x-0 bottom-0 mx-auto h-auto max-h-[90vh] w-full max-w-md rounded-t-xl data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
+} as const
+
 function SheetContent({
   className,
   children,
   showCloseButton = true,
+  side = "right",
   ...props
 }: DialogPrimitive.Popup.Props & {
   showCloseButton?: boolean
+  side?: keyof typeof SHEET_SIDE
 }) {
   return (
     <DialogPrimitive.Portal>
@@ -32,7 +43,8 @@ function SheetContent({
       <DialogPrimitive.Popup
         data-slot="sheet-content"
         className={cn(
-          "fixed inset-y-0 right-0 z-50 flex h-full w-80 max-w-[calc(100%-2rem)] flex-col bg-popover text-popover-foreground ring-1 ring-foreground/10 duration-200 outline-none data-open:animate-in data-open:slide-in-from-right data-closed:animate-out data-closed:slide-out-to-right",
+          "fixed z-50 flex flex-col bg-popover text-popover-foreground ring-1 ring-foreground/10 duration-200 outline-none data-open:animate-in data-closed:animate-out",
+          SHEET_SIDE[side],
           className
         )}
         {...props}

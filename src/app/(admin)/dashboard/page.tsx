@@ -7,13 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { RevenueChart } from "./revenue-chart";
-
-const rupiah = (n: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(n);
+import { rupiah } from "@/lib/format";
 
 export default async function DashboardPage() {
   const [summary, daily] = await Promise.all([

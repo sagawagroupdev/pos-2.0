@@ -22,16 +22,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { rupiah } from "@/lib/format";
 
 type CashierPerf = ReportResult["cashiers"];
 type TxRows = ReportResult["transactions"];
-
-const rupiah = (n: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(n);
 
 function downloadCsv(filename: string, rows: string[][]) {
   const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;

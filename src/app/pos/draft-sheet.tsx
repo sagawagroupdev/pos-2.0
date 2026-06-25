@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 import { Eye, ArrowRight2, Trash, Edit2 } from "iconsax-react";
 import type { DraftOrder, DraftStatus } from "./pos-terminal";
-import { rupiah } from "./cart-panel";
+import { rupiah } from "@/lib/format";
 import { updateOrderStatus, discardDraft } from "./actions";
 import { HELD_STATUS_OPTIONS } from "@/lib/order-status";
 import { StatusBadge } from "@/components/ui/status-badge";

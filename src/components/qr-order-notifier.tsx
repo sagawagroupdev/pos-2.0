@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Pusher from "pusher-js";
 import { toast } from "sonner";
+import { rupiah } from "@/lib/format";
 
 const NEW_QR_ORDER_EVENT = "new-qr-order";
 const ORDER_UPDATED_EVENT = "order-updated";
@@ -15,13 +16,6 @@ type NewQrOrderPayload = {
   total: number;
   paymentMethod: "CASH" | "QRIS";
 };
-
-const rupiah = (n: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(n);
 
 function playAlert() {
   try {

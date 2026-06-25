@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { rupiah } from "@/lib/format";
 
 export type OrderType = "DINE_IN" | "TAKE_AWAY";
 export type PaymentMethod = "CASH" | "CARD" | "QRIS";
@@ -21,13 +22,6 @@ export type CartItem = {
   note: string;
   image: string | null;
 };
-
-export const rupiah = (n: number) =>
-  new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-  }).format(n);
 
 const filledInput =
   "border-transparent bg-muted/60 focus-visible:bg-background";

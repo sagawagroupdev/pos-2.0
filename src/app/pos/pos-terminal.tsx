@@ -18,11 +18,11 @@ import { DraftSheet } from "./draft-sheet";
 import { Receipt, type ReceiptData, type ReceiptStore } from "@/components/receipt";
 import {
   CartPanel,
-  rupiah,
   type CartItem,
   type OrderType,
   type PaymentMethod,
 } from "./cart-panel";
+import { rupiah } from "@/lib/format";
 
 export type DraftStatus =
   | "DRAFT"

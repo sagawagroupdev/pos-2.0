@@ -38,6 +38,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { rupiah } from "@/lib/format";
 
 export type ItemRow = {
   id: string;
@@ -52,9 +53,6 @@ export type ItemRow = {
 };
 
 export type CategoryOption = { id: string; name: string };
-
-const rupiah = (n: number) =>
-  new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", minimumFractionDigits: 0 }).format(n);
 
 function ItemFormFields({
   item,
