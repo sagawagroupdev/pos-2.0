@@ -2,13 +2,12 @@
 
 import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,6 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   HELD_STATUS_OPTIONS,
   isHeldStatus,
@@ -25,6 +25,20 @@ import {
 } from "@/lib/order-status";
 import { rupiah } from "@/lib/format";
 import type { OrderRow } from "./types";
+
+const TYPE_LABEL: Record<OrderRow["type"], string> = {
+  DINE_IN: "Makan di tempat",
+  TAKE_AWAY: "Bawa pulang",
+};
+
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="text-right font-medium break-all">{value}</span>
+    </div>
+  );
+}
 
 export function OrderDetailDialog({
   order,
@@ -35,6 +49,7 @@ export function OrderDetailDialog({
   onCancel,
   onContinue,
   onDelete,
+  onDeleteHistory,
 }: {
   order: OrderRow | null;
   pending: boolean;
@@ -44,19 +59,48 @@ export function OrderDetailDialog({
   onCancel: (id: string) => void;
   onContinue: (id: string) => void;
   onDelete: (id: string) => void;
+  onDeleteHistory: (order: OrderRow) => void;
 }) {
   return (
-    <Dialog open={!!order} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Detail Pesanan {order?.orderNumber}</DialogTitle>
-          <DialogDescription>
+    <Sheet open={!!order} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-96 sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Detail Pesanan</SheetTitle>
+          <SheetDescription>
             {order && new Date(order.transactionDate).toLocaleString("id-ID")}
-          </DialogDescription>
-        </DialogHeader>
+          </SheetDescription>
+        </SheetHeader>
+
         {order && (
-          <div className="flex flex-col gap-3 text-sm">
+          <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 text-sm">
+            <div className="flex items-center justify-between">
+              <span className="font-mono text-base font-semibold">
+                {order.orderNumber}
+              </span>
+              <StatusBadge status={order.status} />
+            </div>
+
+            <div className="flex flex-col gap-1.5 rounded-lg border p-3">
+              <InfoRow label="Trx ID" value={order.id} />
+              <InfoRow
+                label="Sumber"
+                value={order.channel === "QR" ? "QR Table" : "Kasir"}
+              />
+              <InfoRow label="Kasir" value={order.cashierName ?? "-"} />
+              <InfoRow label="Pelanggan" value={order.customerName ?? "-"} />
+              {order.customerPhone && (
+                <InfoRow label="No. Telepon" value={order.customerPhone} />
+              )}
+              {order.channel === "QR" && (
+                <InfoRow label="No. Meja" value={order.tableNumber ?? "-"} />
+              )}
+              <InfoRow label="Tipe" value={TYPE_LABEL[order.type]} />
+              <InfoRow label="Pembayaran" value={order.paymentMethod} />
+              {order.note && <InfoRow label="Catatan" value={order.note} />}
+            </div>
+
             <div className="flex flex-col gap-1">
+              <span className="font-medium">Item</span>
               {order.items.map((it, i) => (
                 <div key={i} className="flex justify-between">
                   <span>
@@ -67,7 +111,8 @@ export function OrderDetailDialog({
                 </div>
               ))}
             </div>
-            <div className="border-t pt-2">
+
+            <div className="flex flex-col gap-1 border-t pt-2">
               <div className="flex justify-between">
                 <span>Subtotal</span>
                 <span>{rupiah(order.subtotal)}</span>
@@ -99,10 +144,27 @@ export function OrderDetailDialog({
                 </div>
               )}
             </div>
+
+            {order.deletedAt && (
+              <div className="flex flex-col gap-1 rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <span className="font-medium text-destructive">
+                  Riwayat Terhapus
+                </span>
+                <InfoRow
+                  label="Dihapus"
+                  value={new Date(order.deletedAt).toLocaleString("id-ID")}
+                />
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-muted-foreground">Alasan</span>
+                  <span>{order.deleteReason ?? "-"}</span>
+                </div>
+              </div>
+            )}
           </div>
         )}
+
         {order && isHeldStatus(order.status) && (
-          <DialogFooter className="sm:justify-between">
+          <div className="flex items-center justify-between gap-2 border-t px-4 py-3">
             <DropdownMenu>
               <DropdownMenuTrigger
                 render={<Button variant="outline" />}
@@ -160,9 +222,21 @@ export function OrderDetailDialog({
                 </>
               )}
             </div>
-          </DialogFooter>
+          </div>
         )}
-      </DialogContent>
-    </Dialog>
+
+        {order && !isHeldStatus(order.status) && !order.deletedAt && (
+          <div className="flex justify-end border-t px-4 py-3">
+            <Button
+              variant="destructive"
+              disabled={pending}
+              onClick={() => onDeleteHistory(order)}
+            >
+              Hapus Riwayat
+            </Button>
+          </div>
+        )}
+      </SheetContent>
+    </Sheet>
   );
 }

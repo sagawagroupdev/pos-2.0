@@ -29,6 +29,7 @@ const posOrderSchema = z.object({
   discount: z.number().min(0).default(0),
   paidAmount: z.number().min(0).default(0),
   customerName: z.string().trim().optional(),
+  cashierName: z.string().trim().optional(),
   note: z.string().trim().optional(),
   resumingDraftId: z.string().optional(),
 });
@@ -61,6 +62,8 @@ export async function submitPosOrder(
       discount: parsed.data.discount,
       paidAmount: parsed.data.paidAmount,
       customerName: parsed.data.customerName,
+      cashierName: parsed.data.cashierName,
+      note: parsed.data.note,
       cashierId: session.user.id,
       deleteDraftId: parsed.data.resumingDraftId,
     });
@@ -95,6 +98,7 @@ export async function holdPosOrder(input: PosOrderInput): Promise<SubmitResult> 
       status: "DRAFT",
       discount: parsed.data.discount,
       customerName: parsed.data.customerName,
+      cashierName: parsed.data.cashierName,
       note: parsed.data.note,
       cashierId: session.user.id,
       skipStock: true,

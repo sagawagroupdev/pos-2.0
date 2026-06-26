@@ -209,6 +209,7 @@ export function PosTerminal({
       discount: discountAmount,
       paidAmount: 0,
       customerName: customerName || undefined,
+      cashierName: cashierName || undefined,
       note: note || undefined,
       resumingDraftId: resumingDraftId || undefined,
     }).then((res) => {
@@ -281,6 +282,7 @@ export function PosTerminal({
       discount: discountAmount,
       paidAmount: paymentMethod === "CASH" ? paidAmount : total,
       customerName: customerName || undefined,
+      cashierName: cashierName || undefined,
       note: note || undefined,
       resumingDraftId: resumingDraftId || undefined,
     }).then((res) => {
@@ -299,6 +301,7 @@ export function PosTerminal({
         tableNumber: null,
         type: orderType,
         paymentMethod,
+        note: note || null,
         items: cart.map((c) => ({
           name: c.name,
           quantity: c.quantity,

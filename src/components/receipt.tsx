@@ -11,6 +11,7 @@ export type ReceiptData = {
   tableNumber: string | null;
   type: "DINE_IN" | "TAKE_AWAY";
   paymentMethod: "CASH" | "CARD" | "QRIS";
+  note: string | null;
   items: { name: string; quantity: number; price: number }[];
   subtotal: number;
   discount: number;
@@ -58,6 +59,7 @@ export const Receipt = forwardRef<
         </div>
       )}
       <div>Tipe: {typeLabel[data.type]}</div>
+      {data.note && <div>Catatan: {data.note}</div>}
       <div className="dash">--------------------------------</div>
       <div className="row">
         <span>Item</span>

@@ -5,20 +5,34 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { type HeldStatus } from "@/lib/order-status";
 import { updateOrderStatus, discardDraft } from "@/app/pos/actions";
-import { confirmQrOrder, cancelQrOrder } from "./confirm-actions";
+import {
+  confirmQrOrder,
+  cancelQrOrder,
+  deleteOrderHistory,
+} from "./confirm-actions";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderFilters } from "./order-filters";
 import { OrderTable } from "./order-table";
+import { DeletedOrderTable } from "./deleted-order-table";
 import { OrderDetailDialog } from "./order-detail-dialog";
+import { DeleteReasonDialog } from "./delete-reason-dialog";
 import type { OrderRow } from "./types";
 
 export type { OrderRow } from "./types";
 
-export function OrdersView({ orders }: { orders: OrderRow[] }) {
+export function OrdersView({
+  orders,
+  deletedOrders,
+}: {
+  orders: OrderRow[];
+  deletedOrders: OrderRow[];
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [dateFilter, setDateFilter] = useState<string>("");
   const [selected, setSelected] = useState<OrderRow | null>(null);
+  const [toDelete, setToDelete] = useState<OrderRow | null>(null);
 
   function handleConfirm(id: string) {
     startTransition(async () => {
@@ -67,6 +81,18 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
     });
   }
 
+  function handleDeleteHistory(id: string, reason: string) {
+    startTransition(async () => {
+      const res = await deleteOrderHistory(id, reason);
+      if (res.ok) {
+        toast.success("Riwayat pesanan dihapus");
+        setToDelete(null);
+        setSelected(null);
+        router.refresh();
+      } else toast.error(res.error);
+    });
+  }
+
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
@@ -79,14 +105,29 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
   }, [orders, statusFilter, dateFilter]);
 
   return (
-    <div className="flex flex-col gap-4">
-      <OrderFilters
-        statusFilter={statusFilter}
-        dateFilter={dateFilter}
-        onStatusChange={setStatusFilter}
-        onDateChange={setDateFilter}
-      />
-      <OrderTable orders={filtered} onSelect={setSelected} />
+    <Tabs defaultValue="active" className="flex flex-col gap-4">
+      <TabsList>
+        <TabsTrigger value="active">Riwayat</TabsTrigger>
+        <TabsTrigger value="deleted">
+          Aktivitas Terhapus
+          {deletedOrders.length > 0 ? ` (${deletedOrders.length})` : ""}
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="active" className="flex flex-col gap-4">
+        <OrderFilters
+          statusFilter={statusFilter}
+          dateFilter={dateFilter}
+          onStatusChange={setStatusFilter}
+          onDateChange={setDateFilter}
+        />
+        <OrderTable orders={filtered} onSelect={setSelected} />
+      </TabsContent>
+
+      <TabsContent value="deleted">
+        <DeletedOrderTable orders={deletedOrders} onSelect={setSelected} />
+      </TabsContent>
+
       <OrderDetailDialog
         order={selected}
         pending={pending}
@@ -96,7 +137,14 @@ export function OrdersView({ orders }: { orders: OrderRow[] }) {
         onCancel={handleCancel}
         onContinue={handleContinue}
         onDelete={handleDelete}
+        onDeleteHistory={setToDelete}
       />
-    </div>
+      <DeleteReasonDialog
+        order={toDelete}
+        pending={pending}
+        onOpenChange={(open) => !open && setToDelete(null)}
+        onConfirm={handleDeleteHistory}
+      />
+    </Tabs>
   );
 }

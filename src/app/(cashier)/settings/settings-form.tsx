@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
 import { updateSettings } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Card,
   CardContent,
@@ -17,17 +19,36 @@ import {
 import type { StoreSettings } from "@/lib/settings";
 
 export function SettingsForm({ settings }: { settings: StoreSettings }) {
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [taxEnabled, setTaxEnabled] = useState(settings.taxEnabled);
   const [enableDraftOrders, setEnableDraftOrders] = useState(
     settings.enableDraftOrders
   );
+  const [synced, setSynced] = useState({
+    taxEnabled: settings.taxEnabled,
+    enableDraftOrders: settings.enableDraftOrders,
+  });
+
+  if (
+    synced.taxEnabled !== settings.taxEnabled ||
+    synced.enableDraftOrders !== settings.enableDraftOrders
+  ) {
+    setSynced({
+      taxEnabled: settings.taxEnabled,
+      enableDraftOrders: settings.enableDraftOrders,
+    });
+    setTaxEnabled(settings.taxEnabled);
+    setEnableDraftOrders(settings.enableDraftOrders);
+  }
 
   function handleSubmit(formData: FormData) {
     startTransition(async () => {
       const res = await updateSettings(formData);
-      if (res.ok) toast.success("Pengaturan disimpan");
-      else toast.error(res.error);
+      if (res.ok) {
+        toast.success("Pengaturan disimpan");
+        router.refresh();
+      } else toast.error(res.error);
     });
   }
 
@@ -88,13 +109,11 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
           <CardDescription>Tarif pajak diterapkan ke transaksi.</CardDescription>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <label className="flex items-center gap-3 text-sm">
+            <Switch
               name="taxEnabled"
               checked={taxEnabled}
-              onChange={(e) => setTaxEnabled(e.target.checked)}
-              className="size-4"
+              onCheckedChange={setTaxEnabled}
             />
             Aktifkan pajak
           </label>
@@ -121,13 +140,11 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
+          <label className="flex items-center gap-3 text-sm">
+            <Switch
               name="enableDraftOrders"
               checked={enableDraftOrders}
-              onChange={(e) => setEnableDraftOrders(e.target.checked)}
-              className="size-4"
+              onCheckedChange={setEnableDraftOrders}
             />
             Aktifkan pesanan draft (tahan order)
           </label>

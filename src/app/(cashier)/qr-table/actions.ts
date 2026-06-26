@@ -42,10 +42,8 @@ export async function deleteTable(id: string): Promise<ActionResult> {
   if (!table || table.cashierId !== session.user.id) {
     return { ok: false, error: "Meja tidak ditemukan" };
   }
-  const orderCount = await prisma.order.count({ where: { tableId: id } });
-  if (orderCount > 0) {
-    return { ok: false, error: "Meja memiliki riwayat pesanan, tidak bisa dihapus" };
-  }
+  // Orders keep their tableNumber snapshot; the FK is ON DELETE SET NULL,
+  // so deleting the table detaches its orders without losing history.
   try {
     await prisma.table.delete({ where: { id } });
     revalidatePath("/qr-table");

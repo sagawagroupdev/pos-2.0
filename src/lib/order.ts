@@ -57,6 +57,7 @@ export type CreateOrderInput = {
   customerPhone?: string;
   note?: string;
   cashierId?: string;
+  cashierName?: string;
   tableId?: string;
   tableNumber?: string;
   skipStock?: boolean;
@@ -118,6 +119,7 @@ export async function createOrder(input: CreateOrderInput) {
             paymentMethod: input.paymentMethod,
             status: input.status,
             cashierId: input.cashierId ?? null,
+            cashierName: input.cashierName ?? null,
             tableId: input.tableId ?? null,
             tableNumber: input.tableNumber ?? null,
             customerName: input.customerName ?? null,
