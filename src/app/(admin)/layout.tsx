@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/session";
 import { DashboardShell, type NavItem } from "@/components/dashboard/dashboard-shell";
+import { GooeyToaster } from "@/components/ui/gooey-toaster";
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
@@ -16,8 +17,9 @@ export default async function AdminLayout({
 }) {
   await requireRole("ADMIN");
   return (
-    <DashboardShell title="Admin" items={ADMIN_NAV}>
+    <DashboardShell items={ADMIN_NAV}>
       {children}
+      <GooeyToaster position="top-center" />
     </DashboardShell>
   );
 }

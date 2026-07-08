@@ -8,13 +8,20 @@ export default async function KemitraanPage() {
   const partnerships = await prisma.partnership.findMany({
     orderBy: { name: "asc" },
     include: {
-      subPartnerships: { orderBy: { name: "asc" }, select: { id: true, name: true } },
+      subPartnerships: {
+        orderBy: { name: "asc" },
+        select: {
+          id: true, name: true, logo: true, status: true,
+        },
+      },
     },
   });
 
   const rows: PartnershipRow[] = partnerships.map((p) => ({
     id: p.id,
     name: p.name,
+    logo: p.logo,
+    status: p.status,
     subPartnerships: p.subPartnerships,
   }));
 

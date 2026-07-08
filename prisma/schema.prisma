@@ -40,11 +40,20 @@ enum OrderChannel {
   QR
 }
 
+enum PartnershipStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 // ---------- Kemitraan ----------
 model Partnership {
   id        String   @id @default(cuid())
   name      String   @unique
+  logo      String?
+  status    PartnershipStatus @default(ACTIVE)
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   subPartnerships SubPartnership[]
   cashiers        User[]
@@ -55,7 +64,10 @@ model SubPartnership {
   name          String
   partnershipId String
   partnership   Partnership @relation(fields: [partnershipId], references: [id], onDelete: Cascade)
+  logo          String?
+  status        PartnershipStatus @default(ACTIVE)
   createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 
   cashiers User[]
 
@@ -79,6 +91,10 @@ model User {
   partnership      Partnership? @relation(fields: [partnershipId], references: [id])
   subPartnershipId String?
   subPartnership   SubPartnership? @relation(fields: [subPartnershipId], references: [id])
+  outletAddress    String?
+  outletPhone      String?
+  outletPic        String?
+  outletFoundedDate DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

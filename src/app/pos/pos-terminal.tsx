@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
-import { toast } from "sonner";
+import { gooeyToast } from "gooey-toast";
 import { submitPosOrder, holdPosOrder } from "./actions";
 import { useCashier } from "./cashier-context";
 import { useDraftsUI } from "./drafts-ui-context";
@@ -137,14 +137,14 @@ export function PosTerminal({
 
   function addItem(item: MenuCategory["items"][number]) {
     if (!item.isAvailable || item.stock < 1) {
-      toast.error("Item tidak tersedia");
+      gooeyToast.error({ title: "Item tidak tersedia" });
       return;
     }
     setCart((prev) => {
       const existing = prev.find((c) => c.itemId === item.id);
       if (existing) {
         if (existing.quantity >= item.stock) {
-          toast.error("Stok tidak cukup");
+          gooeyToast.error({ title: "Stok tidak cukup" });
           return prev;
         }
         return prev.map((c) =>
@@ -173,7 +173,7 @@ export function PosTerminal({
         const next = c.quantity + delta;
         if (next < 1) return [];
         if (next > c.stock) {
-          toast.error("Stok tidak cukup");
+          gooeyToast.error({ title: "Stok tidak cukup" });
           return [c];
         }
         return [{ ...c, quantity: next }];
@@ -194,7 +194,7 @@ export function PosTerminal({
 
   function handleHold() {
     if (!cart.length) {
-      toast.error("Keranjang kosong");
+      gooeyToast.error({ title: "Keranjang kosong" });
       return;
     }
     setHolding(true);
@@ -215,10 +215,10 @@ export function PosTerminal({
     }).then((res) => {
       setHolding(false);
       if (!res.ok) {
-        toast.error(res.error);
+        gooeyToast.error({ title: res.error });
         return;
       }
-      toast.success("Pesanan ditahan");
+      gooeyToast.info({ title: "Pesanan ditahan" });
       reset();
       router.refresh();
     });
@@ -255,19 +255,19 @@ export function PosTerminal({
 
   function handleSubmit() {
     if (!cart.length) {
-      toast.error("Keranjang kosong");
+      gooeyToast.error({ title: "Keranjang kosong" });
       return;
     }
     if (!cashierName.trim()) {
-      toast.error("Nama kasir wajib diisi");
+      gooeyToast.error({ title: "Nama kasir wajib diisi" });
       return;
     }
     if (!customerName.trim()) {
-      toast.error("Nama pelanggan wajib diisi");
+      gooeyToast.error({ title: "Nama pelanggan wajib diisi" });
       return;
     }
     if (paymentMethod === "CASH" && paidAmount < total) {
-      toast.error("Jumlah bayar kurang");
+      gooeyToast.error({ title: "Jumlah bayar kurang" });
       return;
     }
     setSubmitting(true);
@@ -288,7 +288,7 @@ export function PosTerminal({
     }).then((res) => {
       setSubmitting(false);
       if (!res.ok) {
-        toast.error(res.error);
+        gooeyToast.error({ title: res.error });
         return;
       }
       const paid = paymentMethod === "CASH" ? paidAmount : total;
@@ -314,7 +314,7 @@ export function PosTerminal({
         paidAmount: paid,
         changeAmount: paymentMethod === "CASH" ? Math.max(0, paid - total) : 0,
       });
-      toast.success("Transaksi berhasil");
+      gooeyToast.info({ title: "Transaksi berhasil" });
       reset();
     });
   }

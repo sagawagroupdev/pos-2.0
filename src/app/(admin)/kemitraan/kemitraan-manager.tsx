@@ -1,38 +1,36 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import Image from "next/image";
+import { gooeyToast } from "gooey-toast";
+import { Shop } from "iconsax-react";
 import {
   createPartnership,
+  updatePartnership,
   deletePartnership,
   createSubPartnership,
+  updateSubPartnership,
   deleteSubPartnership,
 } from "./actions";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { uploadLogo } from "./_components/logo-field";
+import { PartnershipFields, SubPartnershipFields } from "./_components/partnership-fields";
+import { SubItem } from "./_components/sub-item";
+import { statusLabel, statusVariant } from "./types";
+import type { PartnershipRow, SubPartnershipRow, Status } from "./types";
 
-export type SubPartnershipRow = { id: string; name: string };
-export type PartnershipRow = {
-  id: string;
-  name: string;
-  subPartnerships: SubPartnershipRow[];
-};
+// ---------- Main component ----------
+export type { PartnershipRow, SubPartnershipRow };
 
 export function KemitraanManager({
   partnerships,
@@ -40,16 +38,70 @@ export function KemitraanManager({
   partnerships: PartnershipRow[];
 }) {
   const [pending, startTransition] = useTransition();
-  const [createOpen, setCreateOpen] = useState(false);
-  const [subFor, setSubFor] = useState<PartnershipRow | null>(null);
 
-  function handleCreatePartnership(formData: FormData) {
+  // Create Partnership
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createStatus, setCreateStatus] = useState<Status>("ACTIVE");
+  const [createLogoFile, setCreateLogoFile] = useState<File | null>(null);
+
+  // Edit Partnership
+  const [editTarget, setEditTarget] = useState<PartnershipRow | null>(null);
+  const [editStatus, setEditStatus] = useState<Status>("ACTIVE");
+  const [editLogoFile, setEditLogoFile] = useState<File | null>(null);
+
+  // Create Sub
+  const [subFor, setSubFor] = useState<PartnershipRow | null>(null);
+  const [subCreateStatus, setSubCreateStatus] = useState<Status>("ACTIVE");
+  const [subCreateLogoFile, setSubCreateLogoFile] = useState<File | null>(null);
+
+  // Edit Sub
+  const [subEditTarget, setSubEditTarget] = useState<SubPartnershipRow | null>(null);
+  const [subEditStatus, setSubEditStatus] = useState<Status>("ACTIVE");
+  const [subEditLogoFile, setSubEditLogoFile] = useState<File | null>(null);
+
+  // ---------- Handlers ----------
+  async function handleCreatePartnership(formData: FormData) {
     startTransition(async () => {
-      const res = await createPartnership(formData);
-      if (res.ok) {
-        toast.success("Kemitraan dibuat");
-        setCreateOpen(false);
-      } else toast.error(res.error);
+      try {
+        if (createLogoFile) {
+          const url = await uploadLogo(createLogoFile);
+          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          formData.set("logoUrl", url);
+        }
+        const res = await createPartnership(formData);
+        if (res.ok) {
+          gooeyToast.info({ title: "Kemitraan dibuat" });
+          setCreateOpen(false);
+          setCreateLogoFile(null);
+        } else {
+          gooeyToast.error({ title: res.error ?? "Gagal" });
+        }
+      } catch (e) {
+        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+      }
+    });
+  }
+
+  async function handleUpdatePartnership(formData: FormData) {
+    if (!editTarget) return;
+    startTransition(async () => {
+      try {
+        if (editLogoFile) {
+          const url = await uploadLogo(editLogoFile);
+          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          formData.set("logoUrl", url);
+        }
+        const res = await updatePartnership(editTarget.id, formData);
+        if (res.ok) {
+          gooeyToast.info({ title: "Kemitraan diperbarui" });
+          setEditTarget(null);
+          setEditLogoFile(null);
+        } else {
+          gooeyToast.error({ title: res.error ?? "Gagal" });
+        }
+      } catch (e) {
+        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+      }
     });
   }
 
@@ -57,18 +109,8 @@ export function KemitraanManager({
     if (!confirm("Hapus kemitraan ini beserta semua sub-nya?")) return;
     startTransition(async () => {
       const res = await deletePartnership(id);
-      if (res.ok) toast.success("Kemitraan dihapus");
-      else toast.error(res.error);
-    });
-  }
-
-  function handleCreateSub(formData: FormData) {
-    startTransition(async () => {
-      const res = await createSubPartnership(formData);
-      if (res.ok) {
-        toast.success("Sub kemitraan dibuat");
-        setSubFor(null);
-      } else toast.error(res.error);
+      if (res.ok) gooeyToast.info({ title: "Kemitraan dihapus" });
+      else gooeyToast.error({ title: res.error ?? "Gagal" });
     });
   }
 
@@ -76,39 +118,94 @@ export function KemitraanManager({
     if (!confirm("Hapus sub kemitraan ini?")) return;
     startTransition(async () => {
       const res = await deleteSubPartnership(id);
-      if (res.ok) toast.success("Sub kemitraan dihapus");
-      else toast.error(res.error);
+      if (res.ok) gooeyToast.info({ title: "Sub kemitraan dihapus" });
+      else gooeyToast.error({ title: res.error ?? "Gagal" });
     });
   }
 
+  async function handleCreateSub(formData: FormData) {
+    startTransition(async () => {
+      try {
+        if (subCreateLogoFile) {
+          const url = await uploadLogo(subCreateLogoFile);
+          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          formData.set("logoUrl", url);
+        }
+        const res = await createSubPartnership(formData);
+        if (res.ok) {
+          gooeyToast.info({ title: "Sub kemitraan dibuat" });
+          setSubFor(null);
+          setSubCreateLogoFile(null);
+        } else {
+          gooeyToast.error({ title: res.error ?? "Gagal" });
+        }
+      } catch (e) {
+        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+      }
+    });
+  }
+
+  async function handleUpdateSub(formData: FormData) {
+    if (!subEditTarget) return;
+    startTransition(async () => {
+      try {
+        if (subEditLogoFile) {
+          const url = await uploadLogo(subEditLogoFile);
+          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          formData.set("logoUrl", url);
+        }
+        const res = await updateSubPartnership(subEditTarget.id, formData);
+        if (res.ok) {
+          gooeyToast.info({ title: "Sub kemitraan diperbarui" });
+          setSubEditTarget(null);
+          setSubEditLogoFile(null);
+        } else {
+          gooeyToast.error({ title: res.error ?? "Gagal" });
+        }
+      } catch (e) {
+        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+      }
+    });
+  }
+
+  // ---------- Render ----------
   return (
     <div className="flex flex-col gap-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Kemitraan</h1>
-        <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-          <DialogTrigger render={<Button>Tambah Kemitraan</Button>} />
-          <DialogContent>
-            <form action={handleCreatePartnership}>
-              <DialogHeader>
-                <DialogTitle>Tambah Kemitraan</DialogTitle>
-                <DialogDescription>
-                  Mis. RM Nusantara. Sub brand ditambahkan setelahnya.
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex flex-col gap-2 py-4">
-                <Label htmlFor="name">Nama Kemitraan</Label>
-                <Input id="name" name="name" required />
+        <Sheet
+          open={createOpen}
+          onOpenChange={(o) => { setCreateOpen(o); if (!o) setCreateLogoFile(null); }}
+        >
+          <SheetTrigger render={<Button>Tambah Kemitraan</Button>} />
+          <SheetContent className="w-full max-w-lg">
+            <form action={handleCreatePartnership} className="flex h-full flex-col">
+              <SheetHeader>
+                <SheetTitle>Tambah Kemitraan</SheetTitle>
+                <SheetDescription>
+                  Lengkapi data kemitraan. Sub kemitraan ditambahkan setelahnya.
+                </SheetDescription>
+              </SheetHeader>
+              <div className="flex-1 overflow-y-auto px-4">
+                <PartnershipFields
+                  formId="create"
+                  status={createStatus}
+                  onStatusChange={setCreateStatus}
+                  onFileChange={setCreateLogoFile}
+                />
               </div>
-              <DialogFooter>
-                <Button type="submit" disabled={pending}>
+              <div className="border-t px-4 py-3">
+                <Button type="submit" disabled={pending} className="w-full">
                   {pending ? "Menyimpan..." : "Simpan"}
                 </Button>
-              </DialogFooter>
+              </div>
             </form>
-          </DialogContent>
-        </Dialog>
+          </SheetContent>
+        </Sheet>
       </div>
 
+      {/* Partnership list */}
       {partnerships.length === 0 ? (
         <p className="text-sm text-muted-foreground">
           Belum ada kemitraan. Tambahkan kemitraan untuk mulai.
@@ -117,13 +214,44 @@ export function KemitraanManager({
         <div className="flex flex-col gap-4">
           {partnerships.map((p) => (
             <Card key={p.id}>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>{p.name}</CardTitle>
-                <div className="flex gap-2">
+              <CardHeader className="flex flex-row items-start justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex size-10 shrink-0 items-center justify-center rounded bg-muted">
+                    {p.logo ? (
+                      <Image src={p.logo} alt="" width={40} height={40} className="size-10 rounded object-cover" />
+                    ) : (
+                      <Shop size="20" color="currentColor" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="truncate">{p.name}</CardTitle>
+                      <Badge variant={statusVariant[p.status]}>
+                        {statusLabel[p.status]}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex shrink-0 gap-2">
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => setSubFor(p)}
+                    onClick={() => {
+                      setEditTarget(p);
+                      setEditStatus(p.status);
+                      setEditLogoFile(null);
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSubFor(p);
+                      setSubCreateStatus("ACTIVE");
+                      setSubCreateLogoFile(null);
+                    }}
                   >
                     Tambah Sub
                   </Button>
@@ -139,26 +267,21 @@ export function KemitraanManager({
               </CardHeader>
               <CardContent>
                 {p.subPartnerships.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Belum ada sub kemitraan.
-                  </p>
+                  <p className="text-sm text-muted-foreground">Belum ada sub kemitraan.</p>
                 ) : (
                   <div className="flex flex-col gap-2">
                     {p.subPartnerships.map((s) => (
-                      <div
+                      <SubItem
                         key={s.id}
-                        className="flex items-center justify-between rounded-md border px-3 py-2"
-                      >
-                        <span>{s.name}</span>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          disabled={pending}
-                          onClick={() => handleDeleteSub(s.id)}
-                        >
-                          Hapus
-                        </Button>
-                      </div>
+                        sub={s}
+                        pending={pending}
+                        onEdit={(sub) => {
+                          setSubEditTarget(sub);
+                          setSubEditStatus(sub.status);
+                          setSubEditLogoFile(null);
+                        }}
+                        onDelete={handleDeleteSub}
+                      />
                     ))}
                   </div>
                 )}
@@ -168,28 +291,94 @@ export function KemitraanManager({
         </div>
       )}
 
-      <Dialog open={!!subFor} onOpenChange={(o) => !o && setSubFor(null)}>
-        <DialogContent>
-          <form action={handleCreateSub}>
-            <input type="hidden" name="partnershipId" value={subFor?.id ?? ""} />
-            <DialogHeader>
-              <DialogTitle>Tambah Sub Kemitraan</DialogTitle>
-              <DialogDescription>
-                Sub brand untuk {subFor?.name}.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex flex-col gap-2 py-4">
-              <Label htmlFor="sub-name">Nama Sub Kemitraan</Label>
-              <Input id="sub-name" name="name" required />
+      {/* Edit Partnership sheet */}
+      <Sheet
+        open={!!editTarget}
+        onOpenChange={(o) => { if (!o) { setEditTarget(null); setEditLogoFile(null); } }}
+      >
+        <SheetContent className="w-full max-w-lg">
+          <form action={handleUpdatePartnership} className="flex h-full flex-col">
+            <SheetHeader>
+              <SheetTitle>Edit Kemitraan</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-4">
+              {editTarget && (
+                <PartnershipFields
+                  formId="edit"
+                  defaults={editTarget}
+                  status={editStatus}
+                  onStatusChange={setEditStatus}
+                  onFileChange={setEditLogoFile}
+                />
+              )}
             </div>
-            <DialogFooter>
-              <Button type="submit" disabled={pending}>
+            <div className="border-t px-4 py-3">
+              <Button type="submit" disabled={pending} className="w-full">
                 {pending ? "Menyimpan..." : "Simpan"}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
+
+      {/* Create Sub sheet */}
+      <Sheet
+        open={!!subFor}
+        onOpenChange={(o) => { if (!o) { setSubFor(null); setSubCreateLogoFile(null); } }}
+      >
+        <SheetContent className="w-full max-w-lg">
+          <form action={handleCreateSub} className="flex h-full flex-col">
+            <input type="hidden" name="partnershipId" value={subFor?.id ?? ""} />
+            <SheetHeader>
+              <SheetTitle>Tambah Sub Kemitraan</SheetTitle>
+              <SheetDescription>Sub brand untuk {subFor?.name}.</SheetDescription>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-4">
+              <SubPartnershipFields
+                formId="sub-create"
+                status={subCreateStatus}
+                onStatusChange={setSubCreateStatus}
+                onFileChange={setSubCreateLogoFile}
+              />
+            </div>
+            <div className="border-t px-4 py-3">
+              <Button type="submit" disabled={pending} className="w-full">
+                {pending ? "Menyimpan..." : "Simpan"}
+              </Button>
+            </div>
+          </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* Edit Sub sheet */}
+      <Sheet
+        open={!!subEditTarget}
+        onOpenChange={(o) => { if (!o) { setSubEditTarget(null); setSubEditLogoFile(null); } }}
+      >
+        <SheetContent className="w-full max-w-lg">
+          <form action={handleUpdateSub} className="flex h-full flex-col">
+            <SheetHeader>
+              <SheetTitle>Edit Sub Kemitraan</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto px-4">
+              {subEditTarget && (
+                <SubPartnershipFields
+                  formId="sub-edit"
+                  defaults={subEditTarget}
+                  status={subEditStatus}
+                  onStatusChange={setSubEditStatus}
+                  onFileChange={setSubEditLogoFile}
+                />
+              )}
+            </div>
+            <div className="border-t px-4 py-3">
+              <Button type="submit" disabled={pending} className="w-full">
+                {pending ? "Menyimpan..." : "Simpan"}
+              </Button>
+            </div>
+          </form>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }

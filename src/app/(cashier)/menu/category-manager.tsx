@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { toast } from "sonner";
+import { gooeyToast } from "gooey-toast";
 import {
   createCategory,
   updateCategory,
@@ -39,9 +39,9 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
     startTransition(async () => {
       const res = await createCategory(formData);
       if (res.ok) {
-        toast.success("Kategori dibuat");
+        gooeyToast.info({ title: "Kategori dibuat" });
         setCreateOpen(false);
-      } else toast.error(res.error);
+      } else gooeyToast.error({ title: res.error });
     });
   }
 
@@ -50,9 +50,9 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
     startTransition(async () => {
       const res = await updateCategory(editing.id, formData);
       if (res.ok) {
-        toast.success("Kategori diperbarui");
+        gooeyToast.info({ title: "Kategori diperbarui" });
         setEditing(null);
-      } else toast.error(res.error);
+      } else gooeyToast.error({ title: res.error });
     });
   }
 
@@ -60,8 +60,8 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
     if (!confirm("Hapus kategori ini?")) return;
     startTransition(async () => {
       const res = await deleteCategory(id);
-      if (res.ok) toast.success("Kategori dihapus");
-      else toast.error(res.error);
+      if (res.ok) gooeyToast.info({ title: "Kategori dihapus" });
+      else gooeyToast.error({ title: res.error });
     });
   }
 

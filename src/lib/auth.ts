@@ -16,9 +16,6 @@ export const auth = betterAuth({
     admin({
       defaultRole: "CASHIER",
       adminRoles: ["ADMIN"],
-      // Map our uppercase Role enum to the plugin's access-control roles.
-      // hasPermission() looks up roles[session.user.role] case-sensitively,
-      // so the keys must match the values stored in User.role exactly.
       roles: {
         ADMIN: adminAc,
         CASHIER: userAc,

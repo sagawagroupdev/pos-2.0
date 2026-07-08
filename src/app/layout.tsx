@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
-import { Toaster } from "@/components/ui/sonner";
+import { GooeyToaster } from "@/components/ui/gooey-toaster";
 import "./globals.css";
 
 const inter = Inter({
@@ -30,7 +30,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         {children}
-        <Toaster richColors position="top-center" />
+        <GooeyToaster position="top-center" />
       </body>
     </html>
   );

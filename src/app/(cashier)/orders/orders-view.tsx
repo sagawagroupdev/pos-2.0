@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import { gooeyToast } from "gooey-toast";
 import { type HeldStatus } from "@/lib/order-status";
 import { updateOrderStatus, discardDraft } from "@/app/pos/actions";
 import {
@@ -38,10 +38,10 @@ export function OrdersView({
     startTransition(async () => {
       const res = await confirmQrOrder(id);
       if (res.ok) {
-        toast.success("Pesanan dikonfirmasi lunas");
+        gooeyToast.info({ title: "Pesanan dikonfirmasi lunas" });
         setSelected(null);
         router.refresh();
-      } else toast.error(res.error);
+      } else gooeyToast.error({ title: res.error });
     });
   }
 
@@ -50,18 +50,18 @@ export function OrdersView({
     startTransition(async () => {
       const res = await cancelQrOrder(id);
       if (res.ok) {
-        toast.success("Pesanan dibatalkan");
+        gooeyToast.info({ title: "Pesanan dibatalkan" });
         setSelected(null);
         router.refresh();
-      } else toast.error(res.error);
+      } else gooeyToast.error({ title: res.error });
     });
   }
 
   function handleStatusChange(id: string, status: HeldStatus) {
     startTransition(async () => {
       const res = await updateOrderStatus(id, status);
-      if (res.ok) toast.success("Status diperbarui");
-      else toast.error(res.error);
+      if (res.ok) gooeyToast.info({ title: "Status diperbarui" });
+      else gooeyToast.error({ title: res.error });
     });
   }
 
@@ -74,10 +74,10 @@ export function OrdersView({
     startTransition(async () => {
       const res = await discardDraft(id);
       if (res.ok) {
-        toast.success("Pesanan dihapus");
+        gooeyToast.info({ title: "Pesanan dihapus" });
         setSelected(null);
         router.refresh();
-      } else toast.error(res.error);
+      } else gooeyToast.error({ title: res.error });
     });
   }
 
@@ -85,11 +85,11 @@ export function OrdersView({
     startTransition(async () => {
       const res = await deleteOrderHistory(id, reason);
       if (res.ok) {
-        toast.success("Riwayat pesanan dihapus");
+        gooeyToast.info({ title: "Riwayat pesanan dihapus" });
         setToDelete(null);
         setSelected(null);
         router.refresh();
-      } else toast.error(res.error);
+      } else gooeyToast.error({ title: res.error });
     });
   }
 

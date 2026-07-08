@@ -18,7 +18,7 @@ export default async function CashierLayout({
 }) {
   const session = await requireRole("CASHIER");
   return (
-    <DashboardShell title="Kasir" items={CASHIER_NAV}>
+    <DashboardShell items={CASHIER_NAV}>
       <QrOrderNotifier cashierId={session.user.id} />
       {children}
     </DashboardShell>

@@ -3,7 +3,7 @@
 import { useState, useRef, useTransition } from "react";
 import Image from "next/image";
 import { useReactToPrint } from "react-to-print";
-import { toast } from "sonner";
+import { gooeyToast } from "gooey-toast";
 import { createTable, deleteTable } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,8 +60,8 @@ function TableCard({ table }: { table: TableRow }) {
     if (!confirm(`Hapus meja ${table.number}?`)) return;
     startTransition(async () => {
       const res = await deleteTable(table.id);
-      if (res.ok) toast.success("Meja dihapus");
-      else toast.error(res.error);
+      if (res.ok) gooeyToast.info({ title: "Meja dihapus" });
+      else gooeyToast.error({ title: res.error });
     });
   }
 
@@ -106,9 +106,9 @@ export function QrTableManager({ tables }: { tables: TableRow[] }) {
     startTransition(async () => {
       const res = await createTable(formData);
       if (res.ok) {
-        toast.success("Meja dibuat");
+        gooeyToast.info({ title: "Meja dibuat" });
         setCreateOpen(false);
-      } else toast.error(res.error);
+      } else gooeyToast.error({ title: res.error });
     });
   }
 
