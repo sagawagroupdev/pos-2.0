@@ -150,6 +150,12 @@
   }
 }
 
+@keyframes draw-check {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
 @layer utilities {
   .no-spinner::-webkit-outer-spin-button,
   .no-spinner::-webkit-inner-spin-button {

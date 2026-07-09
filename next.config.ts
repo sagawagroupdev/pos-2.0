@@ -19,6 +19,15 @@ if (r2PublicUrl) {
 
 const nextConfig: NextConfig = {
   images: { remotePatterns },
+  async rewrites() {
+    return [
+      {
+        source: "/order/:path*",
+        has: [{ type: "host", value: "order.sagawagroup.id" }],
+        destination: "/order/:path*",
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -36,54 +36,70 @@ export function CartSheet({
 }) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="bottom" className="gap-0 p-0">
-        <SheetHeader>
+      <SheetContent side="bottom" className="flex max-h-[80vh] flex-col gap-0 p-0">
+        <SheetHeader className="shrink-0 px-4 pt-4">
           <SheetTitle>Keranjang</SheetTitle>
         </SheetHeader>
 
-        <div className="flex max-h-[45vh] flex-col gap-2 overflow-auto p-4">
-          {cart.map((c) => (
-            <div key={c.itemId} className="rounded-md border p-2">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">{c.name}</span>
-                <span>{rupiah(c.price * c.quantity)}</span>
-              </div>
-              <div className="mt-1 flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onChangeQty(c.itemId, -1)}
-                >
-                  -
-                </Button>
-                <span className="w-5 text-center">{c.quantity}</span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onChangeQty(c.itemId, 1)}
-                >
-                  +
-                </Button>
-              </div>
-              <Input
-                placeholder="Catatan (opsional)"
-                value={c.note}
-                onChange={(e) => onSetNote(c.itemId, e.target.value)}
-                className="mt-2"
-              />
+        <div className="flex-1 overflow-auto px-4 pb-2 pt-3">
+          {cart.length === 0 ? (
+            <p className="py-8 text-center text-sm text-muted-foreground">
+              Keranjang masih kosong
+            </p>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {cart.map((c) => (
+                <div key={c.itemId} className="rounded-lg border p-3">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">{c.name}</span>
+                    <span className="text-sm font-semibold">
+                      {rupiah(c.price * c.quantity)}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2">
+                    <Button
+                      size="icon-xs"
+                      variant="outline"
+                      className="size-7 rounded-full"
+                      onClick={() => onChangeQty(c.itemId, -1)}
+                    >
+                      &minus;
+                    </Button>
+                    <span className="flex w-5 justify-center text-sm font-medium">
+                      {c.quantity}
+                    </span>
+                    <Button
+                      size="icon-xs"
+                      variant="outline"
+                      className="size-7 rounded-full"
+                      onClick={() => onChangeQty(c.itemId, 1)}
+                    >
+                      +
+                    </Button>
+                  </div>
+                  <Input
+                    placeholder="Catatan (opsional)"
+                    value={c.note}
+                    onChange={(e) => onSetNote(c.itemId, e.target.value)}
+                    className="mt-2 h-8 text-sm"
+                  />
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
 
-        <div className="flex flex-col gap-3 border-t p-4">
-          <div className="flex flex-col gap-1 text-sm">
+        <div className="shrink-0 border-t px-4 py-3">
+          <div className="mb-3 flex flex-col gap-1 text-sm">
             <div className="flex justify-between">
-              <span>Subtotal</span>
+              <span className="text-muted-foreground">Subtotal</span>
               <span>{rupiah(subtotal)}</span>
             </div>
             {tax > 0 && (
               <div className="flex justify-between">
-                <span>Pajak ({taxRate}%)</span>
+                <span className="text-muted-foreground">
+                  Pajak ({taxRate}%)
+                </span>
                 <span>{rupiah(tax)}</span>
               </div>
             )}
@@ -93,7 +109,7 @@ export function CartSheet({
             </div>
           </div>
           <Button className="w-full" onClick={onContinue}>
-            Lanjutkan
+            Lanjut ke Konfirmasi
           </Button>
         </div>
       </SheetContent>

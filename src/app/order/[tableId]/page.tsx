@@ -11,7 +11,10 @@ export default async function OrderPage({
 }) {
   const { tableId } = await params;
 
-  const table = await prisma.table.findUnique({ where: { id: tableId } });
+  const table = await prisma.table.findUnique({
+    where: { id: tableId },
+    include: { cashier: { select: { outletAddress: true } } },
+  });
   if (!table) notFound();
 
   const [menu, settings] = await Promise.all([getMenu(), getSettings()]);
@@ -20,6 +23,7 @@ export default async function OrderPage({
     <CustomerOrder
       tableId={table.id}
       tableNumber={table.number}
+      outletAddress={table.cashier?.outletAddress ?? null}
       menu={menu}
       storeName={settings.storeName}
       taxRate={settings.taxRate}

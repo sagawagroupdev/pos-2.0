@@ -1,3 +1,5 @@
+"use client";
+
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import type { CartItem, MenuItem } from "./types";
@@ -59,6 +61,10 @@ export function useCart({
     );
   }
 
+  function clearCart() {
+    setCart([]);
+  }
+
   const subtotal = useMemo(
     () => cart.reduce((sum, c) => sum + c.price * c.quantity, 0),
     [cart]
@@ -72,6 +78,7 @@ export function useCart({
     addItem,
     changeQty,
     setNote,
+    clearCart,
     subtotal,
     tax,
     total,

@@ -17,6 +17,7 @@ const qrOrderSchema = z.object({
   customerName: z.string().trim().min(1, "Nama wajib diisi"),
   customerPhone: z.string().trim().min(6, "No. telepon tidak valid"),
   paymentMethod: z.enum(["CASH", "QRIS"]),
+  type: z.enum(["DINE_IN", "TAKE_AWAY"]),
   lines: z.array(lineSchema).min(1, "Pesanan kosong"),
 });
 
@@ -51,7 +52,7 @@ export async function submitQrOrder(
     const order = await createOrder({
       lines: parsed.data.lines,
       channel: "QR",
-      type: "DINE_IN",
+      type: parsed.data.type,
       paymentMethod: parsed.data.paymentMethod,
       status,
       customerName: parsed.data.customerName,

@@ -15,6 +15,7 @@ export type MenuCategory = {
     stock: number;
     image: string | null;
     isAvailable: boolean;
+    categoryId: string;
   }[];
 };
 
@@ -35,6 +36,7 @@ export async function getMenu(): Promise<MenuCategory[]> {
           stock: true,
           image: true,
           isAvailable: true,
+          categoryId: true,
         },
       },
     },

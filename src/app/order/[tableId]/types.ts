@@ -13,4 +13,6 @@ export type CartItem = {
 
 export type PaymentMethod = "CASH" | "QRIS";
 
-export type Stage = "menu" | "confirm" | "checkout" | "done";
+export type OrderType = "DINE_IN" | "TAKE_AWAY";
+
+export type Stage = "orderType" | "menu" | "confirm" | "checkout" | "done";
