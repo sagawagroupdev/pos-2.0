@@ -16,7 +16,7 @@ export default async function LaporanPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Laporan</h1>
+      <h1>Laporan</h1>
       <LaporanView
         initialCashiers={cashiers}
         initialTransactions={transactions}

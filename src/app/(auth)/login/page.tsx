@@ -2,7 +2,7 @@
 
 import { Suspense, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { signIn } from "@/lib/auth-client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,7 +29,7 @@ function LoginForm() {
     setLoading(false);
 
     if (error) {
-      gooeyToast.error({ title: error.message ?? "Email atau password salah" });
+      toast.error(error.message ?? "Email atau password salah");
       return;
     }
 

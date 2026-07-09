@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { rupiah } from "@/lib/format";
 import type { MenuCategory } from "@/lib/menu";
@@ -56,7 +56,7 @@ export function CustomerOrder({
     }).then((res) => {
       setSubmitting(false);
       if (!res.ok) {
-        gooeyToast.error({ title: res.error });
+        toast.error(res.error);
         return;
       }
       setDoneStatus(res.status);

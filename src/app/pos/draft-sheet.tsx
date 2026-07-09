@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { Eye, ArrowRight2, Trash, Edit2 } from "iconsax-react";
 import type { DraftOrder, DraftStatus } from "./pos-terminal";
 import { rupiah } from "@/lib/format";
@@ -91,8 +91,8 @@ export function DraftSheet({
   function handleStatusChange(id: string, status: DraftStatus) {
     startTransition(async () => {
       const res = await updateOrderStatus(id, status);
-      if (res.ok) gooeyToast.info({ title: "Status diperbarui" });
-      else gooeyToast.error({ title: res.error });
+      if (res.ok) toast.success("Status diperbarui");
+      else toast.error(res.error);
     });
   }
 
@@ -100,10 +100,10 @@ export function DraftSheet({
     startTransition(async () => {
       const res = await discardDraft(id);
       if (res.ok) {
-        gooeyToast.info({ title: "Pesanan dihapus" });
+        toast.success("Pesanan dihapus");
         setConfirmDelete(null);
         if (detail?.id === id) setDetail(null);
-      } else gooeyToast.error({ title: res.error });
+      } else toast.error(res.error);
     });
   }
 

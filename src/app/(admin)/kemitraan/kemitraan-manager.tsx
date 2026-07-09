@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { Shop } from "iconsax-react";
 import {
   createPartnership,
@@ -23,6 +23,7 @@ import {
   SheetDescription,
 } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { uploadLogo } from "./_components/logo-field";
 import { PartnershipFields, SubPartnershipFields } from "./_components/partnership-fields";
 import { SubItem } from "./_components/sub-item";
@@ -65,19 +66,19 @@ export function KemitraanManager({
       try {
         if (createLogoFile) {
           const url = await uploadLogo(createLogoFile);
-          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          if (!url) { toast.error("Gagal upload logo"); return; }
           formData.set("logoUrl", url);
         }
         const res = await createPartnership(formData);
         if (res.ok) {
-          gooeyToast.info({ title: "Kemitraan dibuat" });
+          toast.success("Kemitraan dibuat");
           setCreateOpen(false);
           setCreateLogoFile(null);
         } else {
-          gooeyToast.error({ title: res.error ?? "Gagal" });
+          toast.error(res.error ?? "Gagal");
         }
       } catch (e) {
-        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+        toast.error(e instanceof Error ? e.message : "Terjadi kesalahan");
       }
     });
   }
@@ -88,19 +89,19 @@ export function KemitraanManager({
       try {
         if (editLogoFile) {
           const url = await uploadLogo(editLogoFile);
-          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          if (!url) { toast.error("Gagal upload logo"); return; }
           formData.set("logoUrl", url);
         }
         const res = await updatePartnership(editTarget.id, formData);
         if (res.ok) {
-          gooeyToast.info({ title: "Kemitraan diperbarui" });
+          toast.success("Kemitraan diperbarui");
           setEditTarget(null);
           setEditLogoFile(null);
         } else {
-          gooeyToast.error({ title: res.error ?? "Gagal" });
+          toast.error(res.error ?? "Gagal");
         }
       } catch (e) {
-        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+        toast.error(e instanceof Error ? e.message : "Terjadi kesalahan");
       }
     });
   }
@@ -109,8 +110,8 @@ export function KemitraanManager({
     if (!confirm("Hapus kemitraan ini beserta semua sub-nya?")) return;
     startTransition(async () => {
       const res = await deletePartnership(id);
-      if (res.ok) gooeyToast.info({ title: "Kemitraan dihapus" });
-      else gooeyToast.error({ title: res.error ?? "Gagal" });
+      if (res.ok) toast.success("Kemitraan dihapus");
+      else toast.error(res.error ?? "Gagal");
     });
   }
 
@@ -118,8 +119,8 @@ export function KemitraanManager({
     if (!confirm("Hapus sub kemitraan ini?")) return;
     startTransition(async () => {
       const res = await deleteSubPartnership(id);
-      if (res.ok) gooeyToast.info({ title: "Sub kemitraan dihapus" });
-      else gooeyToast.error({ title: res.error ?? "Gagal" });
+      if (res.ok) toast.success("Sub kemitraan dihapus");
+      else toast.error(res.error ?? "Gagal");
     });
   }
 
@@ -128,19 +129,19 @@ export function KemitraanManager({
       try {
         if (subCreateLogoFile) {
           const url = await uploadLogo(subCreateLogoFile);
-          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          if (!url) { toast.error("Gagal upload logo"); return; }
           formData.set("logoUrl", url);
         }
         const res = await createSubPartnership(formData);
         if (res.ok) {
-          gooeyToast.info({ title: "Sub kemitraan dibuat" });
+          toast.success("Sub kemitraan dibuat");
           setSubFor(null);
           setSubCreateLogoFile(null);
         } else {
-          gooeyToast.error({ title: res.error ?? "Gagal" });
+          toast.error(res.error ?? "Gagal");
         }
       } catch (e) {
-        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+        toast.error(e instanceof Error ? e.message : "Terjadi kesalahan");
       }
     });
   }
@@ -151,19 +152,19 @@ export function KemitraanManager({
       try {
         if (subEditLogoFile) {
           const url = await uploadLogo(subEditLogoFile);
-          if (!url) { gooeyToast.error({ title: "Gagal upload logo" }); return; }
+          if (!url) { toast.error("Gagal upload logo"); return; }
           formData.set("logoUrl", url);
         }
         const res = await updateSubPartnership(subEditTarget.id, formData);
         if (res.ok) {
-          gooeyToast.info({ title: "Sub kemitraan diperbarui" });
+          toast.success("Sub kemitraan diperbarui");
           setSubEditTarget(null);
           setSubEditLogoFile(null);
         } else {
-          gooeyToast.error({ title: res.error ?? "Gagal" });
+          toast.error(res.error ?? "Gagal");
         }
       } catch (e) {
-        gooeyToast.error({ title: e instanceof Error ? e.message : "Terjadi kesalahan" });
+        toast.error(e instanceof Error ? e.message : "Terjadi kesalahan");
       }
     });
   }
@@ -173,7 +174,7 @@ export function KemitraanManager({
     <div className="flex flex-col gap-4">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Kemitraan</h1>
+        <h1>Kemitraan</h1>
         <Sheet
           open={createOpen}
           onOpenChange={(o) => { setCreateOpen(o); if (!o) setCreateLogoFile(null); }}
@@ -187,14 +188,14 @@ export function KemitraanManager({
                   Lengkapi data kemitraan. Sub kemitraan ditambahkan setelahnya.
                 </SheetDescription>
               </SheetHeader>
-              <div className="flex-1 overflow-y-auto px-4">
+              <ScrollArea className="flex-1 px-4">
                 <PartnershipFields
                   formId="create"
                   status={createStatus}
                   onStatusChange={setCreateStatus}
                   onFileChange={setCreateLogoFile}
                 />
-              </div>
+              </ScrollArea>
               <div className="border-t px-4 py-3">
                 <Button type="submit" disabled={pending} className="w-full">
                   {pending ? "Menyimpan..." : "Simpan"}
@@ -296,12 +297,12 @@ export function KemitraanManager({
         open={!!editTarget}
         onOpenChange={(o) => { if (!o) { setEditTarget(null); setEditLogoFile(null); } }}
       >
-        <SheetContent className="w-full max-w-lg">
+        <SheetContent className="w-full max-w-lg m-1">
           <form action={handleUpdatePartnership} className="flex h-full flex-col">
             <SheetHeader>
               <SheetTitle>Edit Kemitraan</SheetTitle>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-4">
+            <ScrollArea className="flex-1 px-4">
               {editTarget && (
                 <PartnershipFields
                   formId="edit"
@@ -311,7 +312,7 @@ export function KemitraanManager({
                   onFileChange={setEditLogoFile}
                 />
               )}
-            </div>
+            </ScrollArea>
             <div className="border-t px-4 py-3">
               <Button type="submit" disabled={pending} className="w-full">
                 {pending ? "Menyimpan..." : "Simpan"}
@@ -333,14 +334,14 @@ export function KemitraanManager({
               <SheetTitle>Tambah Sub Kemitraan</SheetTitle>
               <SheetDescription>Sub brand untuk {subFor?.name}.</SheetDescription>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-4">
+            <ScrollArea className="flex-1 px-4">
               <SubPartnershipFields
                 formId="sub-create"
                 status={subCreateStatus}
                 onStatusChange={setSubCreateStatus}
                 onFileChange={setSubCreateLogoFile}
               />
-            </div>
+            </ScrollArea>
             <div className="border-t px-4 py-3">
               <Button type="submit" disabled={pending} className="w-full">
                 {pending ? "Menyimpan..." : "Simpan"}
@@ -360,7 +361,7 @@ export function KemitraanManager({
             <SheetHeader>
               <SheetTitle>Edit Sub Kemitraan</SheetTitle>
             </SheetHeader>
-            <div className="flex-1 overflow-y-auto px-4">
+            <ScrollArea className="flex-1 px-4">
               {subEditTarget && (
                 <SubPartnershipFields
                   formId="sub-edit"
@@ -370,7 +371,7 @@ export function KemitraanManager({
                   onFileChange={setSubEditLogoFile}
                 />
               )}
-            </div>
+            </ScrollArea>
             <div className="border-t px-4 py-3">
               <Button type="submit" disabled={pending} className="w-full">
                 {pending ? "Menyimpan..." : "Simpan"}

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,7 +35,7 @@ export function CheckoutStep({
 
   function handleSubmit() {
     if (!name.trim() || phone.trim().length < 6) {
-      gooeyToast.error({ title: "Lengkapi nama dan no. telepon" });
+      toast.error("Lengkapi nama dan no. telepon");
       return;
     }
     onSubmit({ name, phone, paymentMethod });

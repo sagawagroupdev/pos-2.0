@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { loadReport, type ReportResult } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +63,7 @@ export function LaporanView({
         setCashiers(res.cashiers);
         setTransactions(res.transactions);
       } catch {
-        gooeyToast.error({ title: "Gagal memuat laporan" });
+        toast.error("Gagal memuat laporan");
       }
     });
   }

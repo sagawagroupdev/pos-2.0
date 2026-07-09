@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { Upload, X } from "lucide-react";
 
 // ---------- Upload utility ----------
@@ -65,7 +65,7 @@ export function LogoField({
     const err = validateFile(file);
     if (err) {
       setError(err);
-      gooeyToast.error({ title: err });
+      toast.error(err);
       return;
     }
 

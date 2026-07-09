@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { updateSettings } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,9 +46,9 @@ export function SettingsForm({ settings }: { settings: StoreSettings }) {
     startTransition(async () => {
       const res = await updateSettings(formData);
       if (res.ok) {
-        gooeyToast.info({ title: "Pengaturan disimpan" });
+        toast.success("Pengaturan disimpan");
         router.refresh();
-      } else gooeyToast.error({ title: res.error });
+      } else toast.error(res.error);
     });
   }
 

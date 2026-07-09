@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import { Home2, Maximize2, Notification, Save2, MenuBoard } from "iconsax-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,11 +44,11 @@ export function PosHeader({
   function saveCashier() {
     const next = draftName.trim();
     if (!next) {
-      gooeyToast.error({ title: "Nama kasir tidak boleh kosong" });
+      toast.error("Nama kasir tidak boleh kosong");
       return;
     }
     setCashierName(next);
-    gooeyToast.info({ title: "Nama kasir disimpan" });
+    toast.success("Nama kasir disimpan");
   }
 
   useEffect(() => {

@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import Image from "next/image";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import {
   createItem,
   updateItem,
@@ -139,9 +139,9 @@ export function ItemManager({
     startTransition(async () => {
       const res = await createItem(formData);
       if (res.ok) {
-        gooeyToast.info({ title: "Item dibuat" });
+        toast.success("Item dibuat");
         setCreateOpen(false);
-      } else gooeyToast.error({ title: res.error });
+      } else toast.error(res.error);
     });
   }
 
@@ -150,9 +150,9 @@ export function ItemManager({
     startTransition(async () => {
       const res = await updateItem(editing.id, formData);
       if (res.ok) {
-        gooeyToast.info({ title: "Item diperbarui" });
+        toast.success("Item diperbarui");
         setEditing(null);
-      } else gooeyToast.error({ title: res.error });
+      } else toast.error(res.error);
     });
   }
 
@@ -160,15 +160,15 @@ export function ItemManager({
     if (!confirm("Hapus item ini?")) return;
     startTransition(async () => {
       const res = await deleteItem(id);
-      if (res.ok) gooeyToast.info({ title: "Item dihapus" });
-      else gooeyToast.error({ title: res.error });
+      if (res.ok) toast.success("Item dihapus");
+      else toast.error(res.error);
     });
   }
 
   function handleToggle(id: string, available: boolean) {
     startTransition(async () => {
       const res = await toggleItemAvailability(id, available);
-      if (!res.ok) gooeyToast.error({ title: res.error });
+      if (!res.ok) toast.error(res.error);
     });
   }
 

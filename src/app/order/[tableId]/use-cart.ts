@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { gooeyToast } from "gooey-toast";
+import { toast } from "sonner";
 import type { CartItem, MenuItem } from "./types";
 
 export function useCart({
@@ -17,7 +17,7 @@ export function useCart({
       const existing = prev.find((c) => c.itemId === item.id);
       if (existing) {
         if (existing.quantity >= item.stock) {
-          gooeyToast.error({ title: "Stok tidak cukup" });
+          toast.error("Stok tidak cukup");
           return prev;
         }
         return prev.map((c) =>
@@ -45,7 +45,7 @@ export function useCart({
         const next = c.quantity + delta;
         if (next < 1) return [];
         if (next > c.stock) {
-          gooeyToast.error({ title: "Stok tidak cukup" });
+          toast.error("Stok tidak cukup");
           return [c];
         }
         return [{ ...c, quantity: next }];

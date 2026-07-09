@@ -22,11 +22,12 @@ export default async function KasirPage() {
         outletPhone: true,
         outletPic: true,
         outletFoundedDate: true,
-        partnership: { select: { name: true } },
+        partnership: { select: { name: true, logo: true } },
         subPartnership: {
           select: {
             name: true,
-            partnership: { select: { name: true } },
+            logo: true,
+            partnership: { select: { name: true, logo: true } },
           },
         },
       },
@@ -53,6 +54,7 @@ export default async function KasirPage() {
     subPartnershipName: c.subPartnership?.name ?? null,
     partnershipId: c.partnershipId,
     subPartnershipId: c.subPartnershipId,
+    partnershipLogo: c.subPartnership?.logo ?? c.partnership?.logo ?? null,
     outletAddress: c.outletAddress,
     outletPhone: c.outletPhone,
     outletPic: c.outletPic,
