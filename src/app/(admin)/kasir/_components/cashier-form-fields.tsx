@@ -39,9 +39,9 @@ export function CashierFormFields({
   const subOptions =
     partnerships.find((p) => p.id === selectedPartnership)?.subPartnerships ?? [];
   const currentPartner = partnerships.find((p) => p.id === selectedPartnership);
-  const logoUrl = selectedSub
+  const logoUrl = defaults?.outletLogo ?? (selectedSub
     ? subOptions.find((s) => s.id === selectedSub)?.logo
-    : currentPartner?.logo;
+    : currentPartner?.logo);
 
   const [pwVisible, setPwVisible] = useState(false);
   const dateStr = defaults?.outletFoundedDate?.split("T")[0] ?? "";
@@ -119,6 +119,13 @@ export function CashierFormFields({
       <div className="space-y-2">
         <Label htmlFor="outletPic">PIC</Label>
         <Input id="outletPic" name="outletPic" defaultValue={defaults?.outletPic ?? ""} placeholder="Nama PIC" />
+      </div>
+      <div className="space-y-2">
+        <Label htmlFor="outletLogo">Logo Outlet</Label>
+        {defaults?.outletLogo && (
+          <Image src={defaults.outletLogo} alt="Logo" width={64} height={64} className="size-16 rounded object-contain" />
+        )}
+        <Input id="outletLogo" name="outletLogo" type="file" accept="image/*" />
       </div>
       <div className="space-y-2">
         <Label>Kemitraan</Label>

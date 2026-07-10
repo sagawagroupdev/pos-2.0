@@ -70,6 +70,7 @@ export type CashierRow = {
   partnershipLogo: string | null;
   outletAddress: string | null;
   outletPhone: string | null;
+  outletLogo: string | null;
   outletPic: string | null;
   outletFoundedDate: string | null;
 };

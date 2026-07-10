@@ -94,6 +94,7 @@ model User {
   outletAddress    String?
   outletPhone      String?
   outletPic        String?
+  outletLogo       String?
   outletFoundedDate DateTime?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt

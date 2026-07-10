@@ -6,6 +6,7 @@ import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/session";
+import { uploadImage, deleteImage } from "@/lib/r2";
 
 export type ActionResult = { ok: boolean; error?: string };
 
@@ -74,6 +75,16 @@ export async function createCashier(formData: FormData): Promise<ActionResult> {
   const username = email.split("@")[0] + Math.random().toString(36).slice(2, 6);
 
   try {
+    let outletLogo: string | undefined;
+    const logoFile = formData.get("outletLogo");
+    if (logoFile instanceof File && logoFile.size > 0) {
+      try {
+        outletLogo = await uploadImage(logoFile, "outlet-logo");
+      } catch {
+        return { ok: false, error: "Gagal mengunggah logo outlet" };
+      }
+    }
+
     const { user } = await auth.api.createUser({
       body: {
         name,
@@ -93,6 +104,7 @@ export async function createCashier(formData: FormData): Promise<ActionResult> {
         outletPhone: outletPhone || null,
         outletPic: outletPic || null,
         outletFoundedDate: outletFoundedDate ? new Date(outletFoundedDate) : null,
+        ...(outletLogo !== undefined ? { outletLogo } : {}),
       },
     });
     revalidatePath("/kasir");
@@ -125,6 +137,21 @@ export async function updateCashier(userId: string, formData: FormData): Promise
   if (err) return { ok: false, error: err };
 
   try {
+    let outletLogo: string | undefined;
+    const logoFile = formData.get("outletLogo");
+    if (logoFile instanceof File && logoFile.size > 0) {
+      try {
+        const current = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { outletLogo: true },
+        });
+        outletLogo = await uploadImage(logoFile, "outlet-logo");
+        if (current?.outletLogo) await deleteImage(current.outletLogo);
+      } catch {
+        return { ok: false, error: "Gagal mengunggah logo outlet" };
+      }
+    }
+
     await prisma.user.update({
       where: { id: userId },
       data: {
@@ -136,6 +163,7 @@ export async function updateCashier(userId: string, formData: FormData): Promise
         outletPhone: outletPhone || null,
         outletPic: outletPic || null,
         outletFoundedDate: outletFoundedDate ? new Date(outletFoundedDate) : null,
+        ...(outletLogo !== undefined ? { outletLogo } : {}),
       },
     });
     revalidatePath("/kasir");

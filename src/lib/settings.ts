@@ -17,6 +17,26 @@ export type StoreSettings = {
   paperSize: string | null;
 };
 
+export type CashierOutlet = {
+  outletName: string;
+  outletAddress: string | null;
+  outletPhone: string | null;
+  outletLogo: string | null;
+};
+
+export async function getCashierOutlet(userId: string): Promise<CashierOutlet> {
+  const user = await prisma.user.findUniqueOrThrow({
+    where: { id: userId },
+    select: { name: true, outletAddress: true, outletPhone: true, outletLogo: true },
+  });
+  return {
+    outletName: user.name,
+    outletAddress: user.outletAddress,
+    outletPhone: user.outletPhone,
+    outletLogo: user.outletLogo,
+  };
+}
+
 export async function getSettings(): Promise<StoreSettings> {
   const existing = await prisma.setting.findFirst();
   if (existing) return existing;

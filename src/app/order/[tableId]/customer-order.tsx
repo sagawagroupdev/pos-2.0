@@ -12,6 +12,7 @@ import { ConfirmStep } from "./confirm-step";
 import { CheckoutStep } from "./checkout-step";
 import { OrderSuccess } from "./order-success";
 import type { OrderType, PaymentMethod, Stage } from "./types";
+import Image from "next/image";
 
 export function CustomerOrder({
   tableId,
@@ -155,39 +156,73 @@ export function CustomerOrder({
         key="orderType"
         className="animate-in slide-in-from-right duration-300"
       >
-        <div className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-8 p-6">
-          <div className="text-center">
-            <h1 className="text-xl font-semibold">{storeName}</h1>
-            {outletAddress && (
-              <p className="mt-1 text-sm text-muted-foreground">{outletAddress}</p>
-            )}
-            <p className="mt-1 text-sm text-muted-foreground">Meja {tableNumber}</p>
+        <div className="relative mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-3 p-4">
+          <div className="pointer-events-none absolute inset-x-0 -top-5 -left-5  -right-5 -z-10 h-67 rounded-b-full bg-primary blur-md" />
+          <div className="-mx-8 w-[calc(100%+4rem)] overflow-hidden rounded-b-3xl">
+            <Image
+              src="/assets/element/menus-vektor.svg"
+              alt=""
+              width={240}
+              height={220}
+              className="h-auto w-full object-contain"
+              priority
+            />
           </div>
-          <p className="text-center text-muted-foreground">
+          <p className="text-center text-base font-semibold">
             Pilih jenis pesanan Anda
           </p>
-          <div className="flex w-full flex-col gap-4">
+          <p className="-mt-2 text-center text-xs text-muted-foreground">
+            Meja {tableNumber}
+          </p>
+          <div className="flex w-full flex-col items-center gap-4">
             <button
               onClick={() => { setOrderType("DINE_IN"); navigate("menu"); }}
-              className="flex flex-col items-center gap-3 rounded-xl border-2 border-muted p-8 transition-all hover:border-primary hover:bg-primary/5 active:border-primary"
+              className={`relative flex w-72 cursor-pointer items-center rounded-full border bg-white/10 py-2.5 pl-3 pr-6 backdrop-blur-xl transition-all hover:bg-white/20 active:scale-[0.97] ${
+                orderType === "DINE_IN"
+                  ? "border-emerald-400"
+                  : "border-slate-400/20"
+              }`}
             >
-              <span className="text-3xl">🍽️</span>
-              <span className="text-lg font-semibold">Makan di Tempat</span>
-              <span className="text-sm text-muted-foreground">
-                Pesanan disajikan di meja
-              </span>
+              <Image
+                src="/assets/icon/dine-in.svg"
+                alt=""
+                width={40}
+                height={40}
+                className="shrink-0"
+              />
+              {(orderType === "DINE_IN") && (
+                <svg className="absolute right-3 h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+              <span className="flex-1 text-center text-sm font-semibold">Dine In</span>
             </button>
             <button
               onClick={() => { setOrderType("TAKE_AWAY"); navigate("menu"); }}
-              className="flex flex-col items-center gap-3 rounded-xl border-2 border-muted p-8 transition-all hover:border-primary hover:bg-primary/5 active:border-primary"
+              className={`relative flex w-72 cursor-pointer items-center rounded-full border bg-white/10 py-2.5 pl-3 pr-6 backdrop-blur-xl transition-all hover:bg-white/20 active:scale-[0.97] ${
+                orderType === "TAKE_AWAY"
+                  ? "border-emerald-400"
+                  : "border-slate-400/20"
+              }`}
             >
-              <span className="text-3xl">🛍️</span>
-              <span className="text-lg font-semibold">Bungkus</span>
-              <span className="text-sm text-muted-foreground">
-                Dibawa pulang
-              </span>
+              <Image
+                src="/assets/icon/take-away.svg"
+                alt=""
+                width={40}
+                height={40}
+                className="shrink-0"
+              />
+              {(orderType === "TAKE_AWAY") && (
+                <svg className="absolute right-3 h-5 w-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              )}
+              <span className="flex-1 text-center text-sm font-semibold">Take Away</span>
             </button>
           </div>
+          <p className="mt-auto pb-2 text-center text-xs text-muted-foreground">
+            Powered by Sagawa POS
+          </p>
         </div>
       </div>
     );

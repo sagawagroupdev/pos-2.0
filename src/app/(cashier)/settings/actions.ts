@@ -10,9 +10,6 @@ import { uploadImage, deleteImage } from "@/lib/r2";
 export type ActionResult = { ok: boolean; error?: string };
 
 const settingsSchema = z.object({
-  storeName: z.string().trim().min(1, "Nama toko wajib diisi"),
-  address: z.string().trim().optional(),
-  phone: z.string().trim().optional(),
   taxRate: z.coerce.number().min(0).max(100, "Tarif pajak tidak valid"),
   taxEnabled: z.boolean(),
   enableDraftOrders: z.boolean(),
@@ -21,13 +18,16 @@ const settingsSchema = z.object({
   paperSize: z.string().trim().optional(),
 });
 
+const outletSchema = z.object({
+  outletName: z.string().trim().min(1, "Nama outlet wajib diisi"),
+  outletAddress: z.string().trim().optional(),
+  outletPhone: z.string().trim().optional(),
+});
+
 export async function updateSettings(formData: FormData): Promise<ActionResult> {
   await requireUser();
 
   const parsed = settingsSchema.safeParse({
-    storeName: formData.get("storeName"),
-    address: formData.get("address"),
-    phone: formData.get("phone"),
     taxRate: formData.get("taxRate"),
     taxEnabled: formData.get("taxEnabled") === "on",
     enableDraftOrders: formData.get("enableDraftOrders") === "on",
@@ -52,23 +52,9 @@ export async function updateSettings(formData: FormData): Promise<ActionResult> 
     }
   }
 
-  let logoUrl = current.logoUrl;
-  const logo = formData.get("logo");
-  if (logo instanceof File && logo.size > 0) {
-    try {
-      logoUrl = await uploadImage(logo, "logo");
-      if (current.logoUrl) await deleteImage(current.logoUrl);
-    } catch {
-      return { ok: false, error: "Gagal mengunggah logo" };
-    }
-  }
-
   await prisma.setting.update({
     where: { id: current.id },
     data: {
-      storeName: parsed.data.storeName,
-      address: parsed.data.address || null,
-      phone: parsed.data.phone || null,
       taxRate: parsed.data.taxRate,
       taxEnabled: parsed.data.taxEnabled,
       enableDraftOrders: parsed.data.enableDraftOrders,
@@ -76,7 +62,47 @@ export async function updateSettings(formData: FormData): Promise<ActionResult> 
       printerName: parsed.data.printerName || null,
       paperSize: parsed.data.paperSize || "58mm",
       qrisImageUrl,
-      logoUrl,
+    },
+  });
+
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function updateOutletInfo(formData: FormData): Promise<ActionResult> {
+  const session = await requireUser();
+
+  const parsed = outletSchema.safeParse({
+    outletName: formData.get("outletName"),
+    outletAddress: formData.get("outletAddress"),
+    outletPhone: formData.get("outletPhone"),
+  });
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0].message };
+  }
+
+  let outletLogo: string | undefined;
+  const logo = formData.get("outletLogo");
+  if (logo instanceof File && logo.size > 0) {
+    try {
+      const current = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { outletLogo: true },
+      });
+      outletLogo = await uploadImage(logo, "outlet-logo");
+      if (current?.outletLogo) await deleteImage(current.outletLogo);
+    } catch {
+      return { ok: false, error: "Gagal mengunggah logo" };
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: {
+      name: parsed.data.outletName,
+      outletAddress: parsed.data.outletAddress || null,
+      outletPhone: parsed.data.outletPhone || null,
+      ...(outletLogo !== undefined ? { outletLogo } : {}),
     },
   });
 

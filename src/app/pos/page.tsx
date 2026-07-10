@@ -1,6 +1,6 @@
 import { requireRole } from "@/lib/session";
 import { getMenu } from "@/lib/menu";
-import { getSettings } from "@/lib/settings";
+import { getSettings, getCashierOutlet } from "@/lib/settings";
 import { prisma } from "@/lib/db";
 import { PosHeader } from "./pos-header";
 import { PosTerminal, type DraftOrder } from "./pos-terminal";
@@ -13,9 +13,10 @@ export default async function PosPage({
   searchParams: Promise<{ resume?: string }>;
 }) {
   const session = await requireRole("CASHIER");
-  const [menu, settings, { resume }] = await Promise.all([
+  const [menu, settings, outlet, { resume }] = await Promise.all([
     getMenu(),
     getSettings(),
+    getCashierOutlet(session.user.id),
     searchParams,
   ]);
 
@@ -70,13 +71,13 @@ export default async function PosPage({
           enabled={settings.enableDraftOrders}
           count={drafts.length}
         >
-          <PosHeader storeName={settings.storeName} cashierId={session.user.id} />
+          <PosHeader storeName={outlet.outletName} cashierId={session.user.id} />
           <PosTerminal
             menu={menu}
             store={{
-              storeName: settings.storeName,
-              address: settings.address,
-              phone: settings.phone,
+              storeName: outlet.outletName,
+              address: outlet.outletAddress,
+              phone: outlet.outletPhone,
               receiptFooter: settings.receiptFooter,
             }}
             taxRate={settings.taxRate}
