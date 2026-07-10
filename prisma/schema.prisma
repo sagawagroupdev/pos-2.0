@@ -96,6 +96,7 @@ model User {
   outletPic        String?
   outletLogo       String?
   outletFoundedDate DateTime?
+  businessHours   String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

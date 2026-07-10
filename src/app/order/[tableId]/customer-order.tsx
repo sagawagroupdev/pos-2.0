@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import type { MenuCategory } from "@/lib/menu";
 import { submitQrOrder } from "./actions";
@@ -13,6 +13,7 @@ import { CheckoutStep } from "./checkout-step";
 import { OrderSuccess } from "./order-success";
 import type { OrderType, PaymentMethod, Stage } from "./types";
 import Image from "next/image";
+import { isOpenNow, getDefaultBusinessHours } from "@/lib/business-hours";
 
 export function CustomerOrder({
   tableId,
@@ -23,6 +24,7 @@ export function CustomerOrder({
   taxRate,
   taxEnabled,
   qrisImageUrl,
+  businessHours,
 }: {
   tableId: string;
   tableNumber: string;
@@ -32,6 +34,7 @@ export function CustomerOrder({
   taxRate: number;
   taxEnabled: boolean;
   qrisImageUrl: string | null;
+  businessHours?: string | null;
 }) {
   const cart = useCart({ taxRate, taxEnabled });
   const [orderType, setOrderType] = useState<OrderType>("DINE_IN");
@@ -40,6 +43,15 @@ export function CustomerOrder({
   const [cartOpen, setCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [doneStatus, setDoneStatus] = useState<string | null>(null);
+
+  const openCheck = useMemo(() => {
+    if (!businessHours) return { open: true };
+    try {
+      return isOpenNow(JSON.parse(businessHours));
+    } catch {
+      return { open: true };
+    }
+  }, [businessHours]);
 
   function navigate(next: Stage) {
     setDirection("forward");
@@ -84,6 +96,30 @@ export function CustomerOrder({
       setDoneStatus(res.status);
       navigate("done");
     });
+  }
+
+  if (!openCheck.open) {
+    return (
+      <div className="relative min-h-dvh">
+        <Image
+          src="/assets/img/closed-bg.webp"
+          alt=""
+          fill
+          className="object-cover"
+          priority
+        />
+        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 p-4 text-center text-white">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80">
+            <circle cx="12" cy="12" r="10" />
+            <polyline points="12 6 12 12 16 14" />
+          </svg>
+          <p className="text-lg font-semibold">Maaf Kami Sedang Tutup</p>
+          <p className="text-sm opacity-80">{openCheck.message ?? "Silakan kembali saat jam operasional."}</p>
+          <p className="absolute bottom-4 text-xs opacity-60">Powered by Sagawa POS</p>
+        </div>
+      </div>
+    );
   }
 
   if (stage === "done") {

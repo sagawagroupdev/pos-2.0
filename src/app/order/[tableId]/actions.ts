@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { createOrder } from "@/lib/order";
 import { invalidateMenuCache } from "@/lib/menu";
 import { notifyNewQrOrder } from "@/lib/realtime";
+import { isOpenNow } from "@/lib/settings";
 
 const lineSchema = z.object({
   itemId: z.string().min(1),
@@ -37,9 +38,23 @@ export async function submitQrOrder(
 
   const table = await prisma.table.findUnique({
     where: { id: parsed.data.tableId },
+    include: { cashier: { select: { businessHours: true } } },
   });
   if (!table) {
     return { ok: false, error: "Meja tidak ditemukan" };
+  }
+
+  // Cek jam operasional
+  if (table.cashier?.businessHours) {
+    try {
+      const hours = JSON.parse(table.cashier.businessHours);
+      const check = isOpenNow(hours);
+      if (!check.open) {
+        return { ok: false, error: check.message ?? "Outlet sedang tutup. Silakan pesan kembali saat jam operasional." };
+      }
+    } catch {
+      // parse error — abaikan, biarkan order lanjut
+    }
   }
 
   // CASH -> bayar di kasir (PENDING_PAYMENT); QRIS -> WAITING_CONFIRMATION

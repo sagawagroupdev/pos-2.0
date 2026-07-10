@@ -109,3 +109,34 @@ export async function updateOutletInfo(formData: FormData): Promise<ActionResult
   revalidatePath("/settings");
   return { ok: true };
 }
+
+const dayNames = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
+
+export async function updateBusinessHours(formData: FormData): Promise<ActionResult> {
+  const session = await requireUser();
+  const hours: Record<string, { mode: "hours" | "24h" | "closed"; open?: string; close?: string }> = {};
+
+  for (let d = 1; d <= 7; d++) {
+    const mode = formData.get(`hours[${d}][mode]`);
+    if (mode === "hours") {
+      const open = formData.get(`hours[${d}][open]`) as string | null;
+      const close = formData.get(`hours[${d}][close]`) as string | null;
+      if (!open || !close) {
+        return { ok: false, error: `${dayNames[d - 1]}: jam buka dan tutup wajib diisi` };
+      }
+      hours[String(d)] = { mode: "hours", open, close };
+    } else if (mode === "closed") {
+      hours[String(d)] = { mode: "closed" };
+    } else {
+      hours[String(d)] = { mode: "24h" };
+    }
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { businessHours: JSON.stringify(hours) },
+  });
+
+  revalidatePath("/settings");
+  return { ok: true };
+}

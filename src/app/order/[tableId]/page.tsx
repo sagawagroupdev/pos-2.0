@@ -13,7 +13,7 @@ export default async function OrderPage({
 
   const table = await prisma.table.findUnique({
     where: { id: tableId },
-    include: { cashier: { select: { name: true, outletAddress: true, outletPhone: true, outletLogo: true } } },
+    include: { cashier: { select: { name: true, outletAddress: true, outletPhone: true, outletLogo: true, businessHours: true } } },
   });
   if (!table) notFound();
 
@@ -24,12 +24,12 @@ export default async function OrderPage({
       tableId={table.id}
       tableNumber={table.number}
       outletAddress={table.cashier?.outletAddress ?? null}
-      outletLogo={table.cashier?.outletLogo ?? null}
       menu={menu}
       storeName={table.cashier?.name ?? settings.storeName}
       taxRate={settings.taxRate}
       taxEnabled={settings.taxEnabled}
       qrisImageUrl={settings.qrisImageUrl}
+      businessHours={table.cashier?.businessHours ?? null}
     />
   );
 }

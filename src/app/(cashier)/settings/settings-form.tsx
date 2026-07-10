@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { toast } from "sonner";
-import { updateSettings, updateOutletInfo } from "./actions";
+import { updateSettings, updateOutletInfo, updateBusinessHours } from "./actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,16 +17,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { StoreSettings, CashierOutlet } from "@/lib/settings";
+import type { BusinessHours } from "@/lib/business-hours";
+import { getDefaultBusinessHours } from "@/lib/business-hours";
+
+const dayNames = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
 export function SettingsForm({
   settings,
   outlet,
+  businessHours: initialHours,
 }: {
   settings: StoreSettings;
   outlet: CashierOutlet;
+  businessHours?: BusinessHours;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const [hoursPending, startHoursTransition] = useTransition();
+  const [businessHours, setBusinessHours] = useState<BusinessHours>(
+    initialHours ?? getDefaultBusinessHours()
+  );
   const [taxEnabled, setTaxEnabled] = useState(settings.taxEnabled);
   const [enableDraftOrders, setEnableDraftOrders] = useState(
     settings.enableDraftOrders
@@ -53,6 +63,50 @@ export function SettingsForm({
       const res = await updateOutletInfo(formData);
       if (res.ok) {
         toast.success("Informasi outlet disimpan");
+        router.refresh();
+      } else toast.error(res.error);
+    });
+  }
+
+  function setDayMode(day: number, mode: "hours" | "24h" | "closed") {
+    setBusinessHours((prev) => {
+      const prevDay = prev[String(day)] ?? { mode: "24h" };
+      return {
+        ...prev,
+        [String(day)]: {
+          mode,
+          ...(mode === "hours"
+            ? {
+                open: prevDay.mode === "hours" ? prevDay.open : "08:00",
+                close: prevDay.mode === "hours" ? prevDay.close : "22:00",
+              }
+            : {}),
+        },
+      };
+    });
+  }
+
+  function setDayTime(day: number, field: "open" | "close", value: string) {
+    setBusinessHours((prev) => ({
+      ...prev,
+      [String(day)]: { ...prev[String(day)], [field]: value },
+    }));
+  }
+
+  function handleSaveHours() {
+    startHoursTransition(async () => {
+      const fd = new FormData();
+      for (let d = 1; d <= 7; d++) {
+        const day = businessHours[String(d)] ?? { mode: "24h" };
+        fd.set(`hours[${d}][mode]`, day.mode);
+        if (day.mode === "hours") {
+          fd.set(`hours[${d}][open]`, day.open ?? "08:00");
+          fd.set(`hours[${d}][close]`, day.close ?? "22:00");
+        }
+      }
+      const res = await updateBusinessHours(fd);
+      if (res.ok) {
+        toast.success("Jam operasional disimpan");
         router.refresh();
       } else toast.error(res.error);
     });
@@ -131,6 +185,74 @@ export function SettingsForm({
           </CardContent>
         </Card>
       </form>
+
+      {/* Jam Operasional — per-cashier */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Jam Operasional</CardTitle>
+          <CardDescription>
+            Atur jam buka outlet setiap hari. Customer tidak bisa order di luar jam operasional.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {Array.from({ length: 7 }, (_, i) => {
+            const d = i + 1;
+            const day = businessHours[String(d)] ?? { mode: "24h" };
+            return (
+              <div key={d} className="flex flex-wrap items-center gap-2 rounded-lg border p-2.5">
+                <span className="w-16 text-sm font-medium">{dayNames[i]}</span>
+                <div className="flex gap-1">
+                  {(["hours", "24h", "closed"] as const).map((m) => (
+                    <button
+                      key={m}
+                      type="button"
+                      onClick={() => setDayMode(d, m)}
+                      className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
+                        day.mode === m
+                          ? m === "hours"
+                            ? "bg-primary text-primary-foreground"
+                            : m === "24h"
+                              ? "bg-emerald-500 text-white"
+                              : "bg-destructive text-destructive-foreground"
+                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                      }`}
+                    >
+                      {m === "hours" ? "Buka" : m === "24h" ? "24 Jam" : "Tutup"}
+                    </button>
+                  ))}
+                </div>
+                {day.mode === "hours" && (
+                  <div className="flex items-center gap-1.5">
+                    <input
+                      type="time"
+                      value={day.open ?? "08:00"}
+                      onChange={(e) => setDayTime(d, "open", e.target.value)}
+                      className="h-8 w-24 rounded-md border bg-background px-2 text-xs"
+                    />
+                    <span className="text-xs text-muted-foreground">—</span>
+                    <input
+                      type="time"
+                      value={day.close ?? "22:00"}
+                      onChange={(e) => setDayTime(d, "close", e.target.value)}
+                      className="h-8 w-24 rounded-md border bg-background px-2 text-xs"
+                    />
+                  </div>
+                )}
+              </div>
+            );
+          })}
+          <div className="mt-1">
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSaveHours}
+              disabled={hoursPending}
+            >
+              {hoursPending ? "Menyimpan..." : "Simpan Jam Operasional"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Pengaturan global — tax, QRIS, printer */}
       <form action={handleSaveSettings}>
