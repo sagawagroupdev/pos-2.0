@@ -156,6 +156,17 @@
   }
 }
 
+@keyframes ripple {
+  from {
+    opacity: 0.4;
+    transform: scale(0);
+  }
+  to {
+    opacity: 0;
+    transform: scale(4);
+  }
+}
+
 @layer utilities {
   .no-spinner::-webkit-outer-spin-button,
   .no-spinner::-webkit-inner-spin-button {

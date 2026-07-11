@@ -13,12 +13,15 @@ import { CheckoutStep } from "./checkout-step";
 import { OrderSuccess } from "./order-success";
 import type { OrderType, PaymentMethod, Stage } from "./types";
 import Image from "next/image";
-import { isOpenNow, getDefaultBusinessHours } from "@/lib/business-hours";
+import { useRouter } from "next/navigation";
+import { ArrowRight2 } from "iconsax-react";
+import { isOpenNow } from "@/lib/business-hours";
+import type { BusinessHours } from "@/lib/business-hours";
 
 export function CustomerOrder({
   tableId,
   tableNumber,
-  outletAddress,
+  outletAddress: _outletAddress,
   menu,
   storeName,
   taxRate,
@@ -28,7 +31,7 @@ export function CustomerOrder({
 }: {
   tableId: string;
   tableNumber: string;
-  outletAddress: string | null;
+  outletAddress?: string | null;
   menu: MenuCategory[];
   storeName: string;
   taxRate: number;
@@ -43,6 +46,8 @@ export function CustomerOrder({
   const [cartOpen, setCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [doneStatus, setDoneStatus] = useState<string | null>(null);
+  const [outletRipple, setOutletRipple] = useState(0);
+  const router = useRouter();
 
   const openCheck = useMemo(() => {
     if (!businessHours) return { open: true };
@@ -51,6 +56,18 @@ export function CustomerOrder({
     } catch {
       return { open: true };
     }
+  }, [businessHours]);
+
+  const todayHours = useMemo(() => {
+    if (!businessHours) return "";
+    try {
+      const h = JSON.parse(businessHours) as BusinessHours;
+      const day = (new Date().getDay() || 7);
+      const today = h[String(day)];
+      if (!today || today.mode === "closed") return "Tutup Hari Ini";
+      if (today.mode === "24h") return "00:00 - 23:59";
+      return today.open && today.close ? `${today.open} - ${today.close}` : "";
+    } catch { return ""; }
   }, [businessHours]);
 
   function navigate(next: Stage) {
@@ -192,7 +209,7 @@ export function CustomerOrder({
         key="orderType"
         className="animate-in slide-in-from-right duration-300"
       >
-        <div className="relative mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-3 p-4">
+        <div className="relative mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center gap-3 overflow-x-hidden p-4">
           <div className="pointer-events-none absolute inset-x-0 -top-5 -left-5  -right-5 -z-10 h-67 rounded-b-full bg-primary blur-md" />
           <div className="-mx-8 w-[calc(100%+4rem)] overflow-hidden rounded-b-3xl">
             <Image
@@ -272,28 +289,58 @@ export function CustomerOrder({
         direction === "forward" ? "slide-in-from-right" : "slide-in-from-left"
       }`}
     >
-      <div className="mx-auto max-w-md pb-28">
-        {/* Store info — not sticky */}
-        <div className="flex items-start gap-3 border-b bg-background p-4">
-          <button
-            onClick={() => navigateBack("orderType")}
-            className="mt-0.5 shrink-0 text-muted-foreground hover:text-foreground"
-          >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div>
-            <h1 className="text-lg font-semibold">{storeName}</h1>
-            {outletAddress && (
-              <p className="text-xs text-muted-foreground">{outletAddress}</p>
-            )}
+      <div className="mx-auto max-w-md overflow-x-hidden pb-28">
+        {/* Banner + Outlet identity card */}
+        <div className="relative">
+          <div className="relative h-32 overflow-hidden">
+            <Image
+              src="/assets/img/bg-header.webp"
+              alt=""
+              fill
+              className="object-cover"
+              priority
+            />
+            <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
+            <button
+              onClick={() => navigateBack("orderType")}
+              className="absolute left-4 top-4 flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+              </svg>
+            </button>
           </div>
+          <button
+            onClick={() => { setOutletRipple((k) => k + 1); router.push(`/order/${tableId}/outlet`); }}
+            className="relative -mt-8 mx-4 flex w-[calc(100%-2rem)] cursor-pointer items-center justify-between overflow-hidden rounded-xl bg-white px-5 py-4 shadow-sm shadow-black/15 transition-shadow hover:shadow-lg"
+          >
+            {outletRipple > 0 && (
+              <span
+                key={outletRipple}
+                className="pointer-events-none absolute inset-0 animate-[ripple_0.5s_ease-out] rounded-xl bg-black/10"
+                onAnimationEnd={() => setOutletRipple(0)}
+              />
+            )}
+            <div>
+              <h1 className="text-base font-semibold text-foreground">{storeName}</h1>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {todayHours === "Tutup Hari Ini"
+                  ? "Tutup Hari Ini"
+                  : todayHours
+                    ? `Buka hari ini • ${todayHours}`
+                    : ""}
+              </p>
+            </div>
+            <ArrowRight2 size="16" color="currentColor" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          </button>
         </div>
 
+        {/* Spacer for shadow visibility */}
+        <div className="h-6" />
+
         {/* Table number + order type — sticky centered */}
-        <div className="sticky top-0 z-20 border-b bg-background/80 py-2 text-center backdrop-blur-sm">
-          <div className="text-lg font-semibold">Meja {tableNumber}</div>
+        <div className="sticky top-0 z-30 border-b bg-background/80 py-2 text-center backdrop-blur-sm">
+          <div className="text-md font-semibold">Meja {tableNumber}</div>
           <div className="text-xs text-muted-foreground">
             {orderType === "DINE_IN" ? "Makan di Tempat" : "Bungkus"}
           </div>

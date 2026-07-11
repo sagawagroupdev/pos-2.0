@@ -1,7 +1,7 @@
 "use client";
 
-import { ShoppingCart } from "iconsax-react";
-import { Button } from "@/components/ui/button";
+import { useState, useCallback } from "react";
+import { BagHappy } from "iconsax-react";
 import { rupiah } from "@/lib/format";
 
 export function CartBar({
@@ -13,28 +13,39 @@ export function CartBar({
   total: number;
   onOpenCart: () => void;
 }) {
+  const [clickKey, setClickKey] = useState(0);
+
+  const handleClick = useCallback(() => {
+    setClickKey((k) => k + 1);
+    onOpenCart();
+  }, [onOpenCart]);
+
   if (itemCount === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md px-4 pb-4">
-      <div className="animate-in slide-in-from-bottom flex items-center gap-3 rounded-xl bg-primary p-3 text-primary-foreground shadow-lg">
-        <div className="relative">
-          <ShoppingCart size="22" color="currentColor" />
-          <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-background text-[10px] font-bold text-primary">
-            {itemCount}
+    <div className="fixed inset-x-0 bottom-0 z-20 mx-auto max-w-md px-8 pb-4">
+      <button
+        onClick={handleClick}
+        className="relative w-full animate-in slide-in-from-bottom cursor-pointer overflow-hidden rounded-xl bg-primary p-3 text-primary-foreground shadow-lg transition-all active:scale-[0.97]"
+      >
+        {clickKey > 0 && (
+          <span
+            key={clickKey}
+            className="pointer-events-none absolute inset-0 animate-[ripple_0.5s_ease-out] rounded-full bg-black/20"
+            onAnimationEnd={() => setClickKey(0)}
+          />
+        )}
+        <span className="flex items-center gap-3">
+          <span className="relative">
+            <BagHappy size="22" color="currentColor" />
+            <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-background text-[10px] font-bold text-primary">
+              {itemCount}
+            </span>
           </span>
-        </div>
-        <span className="flex-1 text-sm font-medium">Lihat Keranjang</span>
-        <span className="font-semibold">{rupiah(total)}</span>
-        <Button
-          size="sm"
-          variant="secondary"
-          className="ml-1 shrink-0"
-          onClick={onOpenCart}
-        >
-          Lihat
-        </Button>
-      </div>
+          <span className="flex-1 text-left text-sm font-medium">Checkout</span>
+          <span className="font-semibold">{rupiah(total)}</span>
+        </span>
+      </button>
     </div>
   );
 }
