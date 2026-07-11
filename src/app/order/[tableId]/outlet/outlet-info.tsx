@@ -69,7 +69,7 @@ export function OutletInfo({
                   alt={outletName}
                   width={80}
                   height={80}
-                  className="size-20 rounded-full border-4 border-white object-cover shadow-md"
+                  className="size-20 rounded-full border-2 border-white object-cover shadow-md"
                 />
               ) : (
                 <div className="flex size-20 items-center justify-center rounded-full border-4 border-white bg-primary text-2xl font-bold text-primary-foreground shadow-md">

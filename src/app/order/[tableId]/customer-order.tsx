@@ -15,6 +15,7 @@ import type { OrderType, PaymentMethod, Stage } from "./types";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight2 } from "iconsax-react";
+import { MenuSearch } from "./menu-search";
 import { isOpenNow } from "@/lib/business-hours";
 import type { BusinessHours } from "@/lib/business-hours";
 
@@ -309,6 +310,12 @@ export function CustomerOrder({
                 <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
               </svg>
             </button>
+            <MenuSearch
+              menu={menu}
+              cart={cart.cart}
+              onAdd={cart.addItem}
+              onChangeQty={cart.changeQty}
+            />
           </div>
           <button
             onClick={() => { setOutletRipple((k) => k + 1); router.push(`/order/${tableId}/outlet`); }}
