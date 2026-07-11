@@ -31,7 +31,7 @@ export function CartBar({
         {clickKey > 0 && (
           <span
             key={clickKey}
-            className="pointer-events-none absolute inset-0 animate-[ripple_0.5s_ease-out] rounded-full bg-black/20"
+            className="pointer-events-none absolute inset-0 animate-[ripple_0.5s_ease-out] rounded-xl bg-black/20"
             onAnimationEnd={() => setClickKey(0)}
           />
         )}

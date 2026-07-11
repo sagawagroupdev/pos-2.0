@@ -60,7 +60,7 @@ export function ConfirmStep({
           {tax > 0 && (
             <div className="flex justify-between">
               <span className="text-muted-foreground">
-                Pajak ({taxRate}%)
+                PB1 ({taxRate}%)
               </span>
               <span>{rupiah(tax)}</span>
             </div>

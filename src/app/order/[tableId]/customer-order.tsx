@@ -16,6 +16,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight2 } from "iconsax-react";
 import { MenuSearch } from "./menu-search";
+import { RippleButton } from "@/components/ui/ripple-button";
 import { isOpenNow } from "@/lib/business-hours";
 import type { BusinessHours } from "@/lib/business-hours";
 
@@ -229,9 +230,9 @@ export function CustomerOrder({
             Meja {tableNumber}
           </p>
           <div className="flex w-full flex-col items-center gap-4">
-            <button
+            <RippleButton
               onClick={() => { setOrderType("DINE_IN"); navigate("menu"); }}
-              className={`relative flex w-72 cursor-pointer items-center rounded-full border bg-white/10 py-2.5 pl-3 pr-6 backdrop-blur-xl transition-all hover:bg-white/20 active:scale-[0.97] ${
+              className={`relative flex w-72 items-center rounded-full border bg-white/10 py-2.5 pl-3 pr-6 backdrop-blur-xl transition-all hover:bg-white/20 active:scale-[0.97] ${
                 orderType === "DINE_IN"
                   ? "border-emerald-400"
                   : "border-slate-400/20"
@@ -250,10 +251,10 @@ export function CustomerOrder({
                 </svg>
               )}
               <span className="flex-1 text-center text-sm font-semibold">Dine In</span>
-            </button>
-            <button
+            </RippleButton>
+            <RippleButton
               onClick={() => { setOrderType("TAKE_AWAY"); navigate("menu"); }}
-              className={`relative flex w-72 cursor-pointer items-center rounded-full border bg-white/10 py-2.5 pl-3 pr-6 backdrop-blur-xl transition-all hover:bg-white/20 active:scale-[0.97] ${
+              className={`relative flex w-72 items-center rounded-full border bg-white/10 py-2.5 pl-3 pr-6 backdrop-blur-xl transition-all hover:bg-white/20 active:scale-[0.97] ${
                 orderType === "TAKE_AWAY"
                   ? "border-emerald-400"
                   : "border-slate-400/20"
@@ -272,7 +273,7 @@ export function CustomerOrder({
                 </svg>
               )}
               <span className="flex-1 text-center text-sm font-semibold">Take Away</span>
-            </button>
+            </RippleButton>
           </div>
           <p className="mt-auto pb-2 text-center text-xs text-muted-foreground">
             Powered by Sagawa POS
@@ -290,26 +291,30 @@ export function CustomerOrder({
         direction === "forward" ? "slide-in-from-right" : "slide-in-from-left"
       }`}
     >
-      <div className="mx-auto max-w-md overflow-x-hidden pb-28">
+      <div className="mx-auto max-w-md pb-28">
+        <div className="overflow-x-hidden">
         {/* Banner + Outlet identity card */}
         <div className="relative">
           <div className="relative h-32 overflow-hidden">
             <Image
               src="/assets/img/bg-header.webp"
-              alt=""
               fill
+              alt=""
+              sizes=""
               className="object-cover"
               priority
             />
             <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/20 to-transparent" />
-            <button
-              onClick={() => navigateBack("orderType")}
-              className="absolute left-4 top-4 flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
-            >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
-              </svg>
-            </button>
+            <div className="absolute left-4 top-4 z-10">
+              <RippleButton
+                onClick={() => navigateBack("orderType")}
+                className="flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+                </svg>
+              </RippleButton>
+            </div>
             <MenuSearch
               menu={menu}
               cart={cart.cart}
@@ -319,7 +324,7 @@ export function CustomerOrder({
           </div>
           <button
             onClick={() => { setOutletRipple((k) => k + 1); router.push(`/order/${tableId}/outlet`); }}
-            className="relative -mt-8 mx-4 flex w-[calc(100%-2rem)] cursor-pointer items-center justify-between overflow-hidden rounded-xl bg-white px-5 py-4 shadow-sm shadow-black/15 transition-shadow hover:shadow-lg"
+            className="relative -mt-8 mx-4 flex w-[calc(100%-2rem)] cursor-pointer items-center justify-between overflow-hidden rounded-xl bg-white px-5 py-4 shadow-md shadow-black/15 transition-shadow hover:shadow-lg"
           >
             {outletRipple > 0 && (
               <span
@@ -342,23 +347,27 @@ export function CustomerOrder({
           </button>
         </div>
 
-        {/* Spacer for shadow visibility */}
         <div className="h-6" />
 
-        {/* Table number + order type — sticky centered */}
-        <div className="sticky top-0 z-30 border-b bg-background/80 py-2 text-center backdrop-blur-sm">
-          <div className="text-md font-semibold">Meja {tableNumber}</div>
-          <div className="text-xs text-muted-foreground">
-            {orderType === "DINE_IN" ? "Makan di Tempat" : "Bungkus"}
+        </div>
+
+        {/* Table number */}
+        <div className="sticky top-0 z-30 flex items-center border-y bg-background/80 py-2 px-4 backdrop-blur-sm">
+          <div className="flex-1 text-center">
+            <div className="text-md font-semibold">Meja {tableNumber}</div>
+            <div className="text-xs text-muted-foreground">
+              {orderType === "DINE_IN" ? "Makan di Tempat" : "Bungkus"}
+            </div>
           </div>
         </div>
 
-        <div className="p-4">
+        <div className="p-2">
           <MenuList
             menu={menu}
             cart={cart.cart}
             onAdd={cart.addItem}
             onChangeQty={cart.changeQty}
+            onSetNote={cart.setNote}
           />
         </div>
 

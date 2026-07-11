@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { rupiah } from "@/lib/format";
+import { RippleButton } from "@/components/ui/ripple-button";
 import type { PaymentMethod } from "./types";
 
 const paymentOptions: {
@@ -106,7 +107,7 @@ export function CheckoutStep({
                 const selected = paymentMethod === opt.value;
                 const Icon = opt.icon;
                 return (
-                  <button
+                  <RippleButton
                     key={opt.value}
                     type="button"
                     onClick={() => setPaymentMethod(opt.value)}
@@ -130,7 +131,7 @@ export function CheckoutStep({
                     >
                       {opt.label}
                     </span>
-                  </button>
+                  </RippleButton>
                 );
               })}
             </div>
@@ -147,7 +148,7 @@ export function CheckoutStep({
             {tax > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
-                  Pajak ({taxRate}%)
+                  PB1 ({taxRate}%)
                 </span>
                 <span>{rupiah(tax)}</span>
               </div>

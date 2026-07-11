@@ -90,7 +90,7 @@ export const Receipt = forwardRef<
       )}
       {data.tax > 0 && (
         <div className="row">
-          <span>Pajak</span>
+          <span>PB1</span>
           <span>{fmt(data.tax)}</span>
         </div>
       )}

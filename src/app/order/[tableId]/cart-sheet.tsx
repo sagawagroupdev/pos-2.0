@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Add, Minus } from "iconsax-react";
 import {
   Sheet,
   SheetContent,
@@ -63,7 +64,7 @@ export function CartSheet({
                       className="size-7 rounded-full"
                       onClick={() => onChangeQty(c.itemId, -1)}
                     >
-                      &minus;
+                      <Minus size="16" color="currentColor" />
                     </Button>
                     <span className="flex w-5 justify-center text-sm font-medium">
                       {c.quantity}
@@ -74,7 +75,7 @@ export function CartSheet({
                       className="size-7 rounded-full"
                       onClick={() => onChangeQty(c.itemId, 1)}
                     >
-                      +
+                      <Add size="16" color="currentColor" />
                     </Button>
                   </div>
                   <Input
@@ -98,7 +99,7 @@ export function CartSheet({
             {tax > 0 && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">
-                  Pajak ({taxRate}%)
+                  PB1 ({taxRate}%)
                 </span>
                 <span>{rupiah(tax)}</span>
               </div>
