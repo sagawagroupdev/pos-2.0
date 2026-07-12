@@ -115,7 +115,7 @@ export function MenuDetail({
 
           <div className="px-4 pb-8">
             {outOfStock ? (
-              <span className="flex items-center justify-center rounded-full bg-muted px-4 py-3 text-sm text-muted-foreground">Stok Habis</span>
+              <span className="flex items-center justify-center rounded-full bg-muted px-4 py-3 text-sm text-muted-foreground">Sold Out</span>
             ) : (
               <RippleButton type="submit" className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary py-3.5 text-base font-semibold text-primary-foreground shadow-lg transition-all active:scale-[0.98]">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

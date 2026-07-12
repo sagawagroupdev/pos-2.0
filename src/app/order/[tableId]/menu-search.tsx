@@ -28,9 +28,11 @@ export function MenuSearch({
   const dragStart = useRef(0);
   const isDragging = useRef(false);
 
+  const cartItemIds = useMemo(() => new Set(cart.map((c) => c.itemId)), [cart]);
+
   const allItems = useMemo(
-    () => menu.flatMap((c) => c.items.filter((i) => i.isAvailable)),
-    [menu],
+    () => menu.flatMap((c) => c.items.filter((i) => i.isAvailable || cartItemIds.has(i.id))),
+    [menu, cartItemIds],
   );
 
   const filtered = useMemo(() => {
@@ -69,7 +71,7 @@ export function MenuSearch({
     if (delta > 0) {
       dragY.current = delta;
       if (panelRef.current) {
-        panelRef.current.style.transform = `translateY(${delta}px)`;
+        panelRef.current.style.transform = "translateY(" + delta + "px)";
       }
     }
   }
@@ -163,13 +165,19 @@ export function MenuSearch({
 
     return (
       <div key={item.id} className="flex items-center gap-3 py-2.5">
-        {item.image ? (
-          <Image src={item.image} alt={item.name} width={52} height={52} className="size-12 shrink-0 rounded-lg object-cover" />
-        ) : (
-          <div className="flex size-12 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
-            {item.name.charAt(0)}
-          </div>
-        )}
+        <div className="relative shrink-0">
+          {item.image ? (
+            <Image src={item.image} alt={item.name} width={52} height={52} className="size-12 rounded-lg object-cover" />
+          ) : (
+            <div className="flex size-12 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
+              {item.name.charAt(0)}
+            </div>
+          )}
+          {outOfStock && (
+            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/50">
+            </div>
+          )}
+        </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{item.name}</div>
           {item.description && (
@@ -180,7 +188,7 @@ export function MenuSearch({
           </div>
         </div>
         {outOfStock ? (
-          <span className="shrink-0 text-xs text-muted-foreground">Stok Habis</span>
+          <span className="shrink-0 text-xs text-muted-foreground">Sold Out</span>
         ) : inCart ? (
           <div className="flex shrink-0 items-center gap-1">
             <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, -1)}><Minus size="16" color="currentColor" /></Button>

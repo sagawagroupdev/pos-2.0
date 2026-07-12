@@ -7,11 +7,10 @@ import { submitQrOrder } from "./actions";
 import { useCart } from "./use-cart";
 import { MenuList } from "./menu-list";
 import { CartBar } from "./cart-bar";
-import { CartSheet } from "./cart-sheet";
 import { ConfirmStep } from "./confirm-step";
 import { CheckoutStep } from "./checkout-step";
 import { OrderSuccess } from "./order-success";
-import type { OrderType, PaymentMethod, Stage } from "./types";
+import type { OrderType, PaymentMethod, Stage, MenuItem } from "./types";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight2 } from "iconsax-react";
@@ -45,8 +44,8 @@ export function CustomerOrder({
   const [orderType, setOrderType] = useState<OrderType>("DINE_IN");
   const [stage, setStage] = useState<Stage>("orderType");
   const [direction, setDirection] = useState<"forward" | "backward">("forward");
-  const [cartOpen, setCartOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [globalNote, setGlobalNote] = useState("");
   const [doneStatus, setDoneStatus] = useState<string | null>(null);
   const [outletRipple, setOutletRipple] = useState(0);
   const router = useRouter();
@@ -100,6 +99,7 @@ export function CustomerOrder({
       customerPhone: data.phone,
       paymentMethod: data.paymentMethod,
       type: orderType,
+      note: globalNote || undefined,
       lines: cart.cart.map((c) => ({
         itemId: c.itemId,
         quantity: c.quantity,
@@ -166,11 +166,18 @@ export function CustomerOrder({
       >
         <div className="mx-auto max-w-md">
           <ConfirmStep
+            orderType={orderType}
+            menu={menu}
             cart={cart.cart}
             subtotal={cart.subtotal}
             tax={cart.tax}
             taxRate={taxRate}
             total={cart.total}
+            globalNote={globalNote}
+            onChangeQty={cart.changeQty}
+            onSetNote={cart.setNote}
+            onAddItem={cart.addItem}
+            onGlobalNoteChange={setGlobalNote}
             onBack={() => navigateBack("menu")}
             onContinue={() => navigate("checkout")}
           />
@@ -374,23 +381,7 @@ export function CustomerOrder({
         <CartBar
           itemCount={cart.itemCount}
           total={cart.total}
-          onOpenCart={() => setCartOpen(true)}
-        />
-
-        <CartSheet
-          open={cartOpen}
-          onOpenChange={setCartOpen}
-          cart={cart.cart}
-          subtotal={cart.subtotal}
-          tax={cart.tax}
-          taxRate={taxRate}
-          total={cart.total}
-          onChangeQty={cart.changeQty}
-          onSetNote={cart.setNote}
-          onContinue={() => {
-            setCartOpen(false);
-            navigate("confirm");
-          }}
+          onOpenCart={() => navigate("confirm")}
         />
       </div>
     </div>

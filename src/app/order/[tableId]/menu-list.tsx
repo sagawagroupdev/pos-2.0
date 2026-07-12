@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
 import { Element3, RowVertical, ArrowRight2, Minus, Add } from "iconsax-react";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,10 @@ export function MenuList({
   onChangeQty: (itemId: string, delta: number) => void;
   onSetNote?: (itemId: string, note: string) => void;
 }) {
-  const firstCat = menu.find((c) => c.items.some((i) => i.isAvailable))?.id ?? menu[0]?.id;
+  const cartItemIds = useMemo(() => new Set(cart.map((c) => c.itemId)), [cart]);
+
+  const firstCat =
+    menu.find((c) => c.items.some((i) => i.isAvailable))?.id ?? menu[0]?.id;
   const [activeCat, setActiveCat] = useState<string>(firstCat);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -45,7 +48,10 @@ export function MenuList({
   const touchStart = useRef({ x: 0, y: 0 });
   const tabsRef = useRef<HTMLDivElement>(null);
 
-  const availableCats = menu.filter((c) => c.items.some((i) => i.isAvailable));
+  const availableCats = menu.filter(
+    (c) =>
+      c.items.some((i) => i.isAvailable || cartItemIds.has(i.id)),
+  );
 
   const checkScroll = useCallback(() => {
     const el = tabsRef.current;
@@ -67,7 +73,11 @@ export function MenuList({
   }
 
   const displayItems = menu
-    .flatMap((c) => c.items.filter((i) => i.isAvailable))
+    .flatMap((c) =>
+      c.items.filter(
+        (i) => i.isAvailable || cartItemIds.has(i.id),
+      ),
+    )
     .filter((i) => i.categoryId === activeCat);
 
   function selectCat(id: string) {
@@ -132,7 +142,9 @@ export function MenuList({
               </SheetHeader>
               <div className="flex-1 overflow-auto px-4 pb-4 pt-2">
                 {menu.map((cat) => {
-                  const count = cat.items.filter((i) => i.isAvailable).length;
+                  const count = cat.items.filter(
+                    (i) => i.isAvailable || cartItemIds.has(i.id),
+                  ).length;
                   if (count === 0) return null;
                   return (
                     <button
@@ -142,7 +154,7 @@ export function MenuList({
                         "flex w-full items-center gap-2 rounded-lg px-3 py-2.5 text-left text-sm transition-colors",
                         activeCat === cat.id
                           ? "bg-primary/10 font-semibold text-primary"
-                          : "hover:bg-muted"
+                          : "hover:bg-muted",
                       )}
                     >
                       {cat.name}
@@ -162,7 +174,10 @@ export function MenuList({
 
         {/* Category tabs */}
         {menu.map((cat) => {
-          if (cat.items.filter((i) => i.isAvailable).length === 0) return null;
+          const items = cat.items.filter(
+            (i) => i.isAvailable || cartItemIds.has(i.id),
+          );
+          if (items.length === 0) return null;
           return (
             <RippleButton
               key={cat.id}
@@ -171,7 +186,7 @@ export function MenuList({
                 "flex shrink-0 items-center whitespace-nowrap border-b-2 px-4 py-3 text-sm font-sm transition-colors",
                 activeCat === cat.id
                   ? "border-primary text-foreground font-sm"
-                  : "border-transparent text-muted-foreground hover:text-foreground"
+                  : "border-transparent text-muted-foreground hover:text-foreground",
               )}
             >
               {cat.name}
@@ -181,10 +196,14 @@ export function MenuList({
 
         {/* spacer biar tab terakhir gak nempel layar */}
         <div className="w-4 shrink-0" />
-        
+
         {canScrollRight && (
           <div className="absolute right-0 inset-y-0 z-10 flex items-center bg-linear-to-l from-background via-background/80 to-transparent w-8 justify-end pr-1 pointer-events-none">
-            <ArrowRight2 size="14" color="currentColor" className="text-muted-foreground/60" />
+            <ArrowRight2
+              size="14"
+              color="currentColor"
+              className="text-muted-foreground/60"
+            />
           </div>
         )}
       </div>
@@ -214,8 +233,13 @@ export function MenuList({
 
       <MenuDetail
         item={detailItem}
-        onAdd={(item, note) => { onAdd(item); if (note && onSetNote) onSetNote(item.id, note); }}
-        onOpenChange={(open) => { if (!open) setDetailItem(null); }}
+        onAdd={(item, note) => {
+          onAdd(item);
+          if (note && onSetNote) onSetNote(item.id, note);
+        }}
+        onOpenChange={(open) => {
+          if (!open) setDetailItem(null);
+        }}
       />
     </div>
   );
@@ -229,10 +253,17 @@ export function MenuList({
         key={item.id}
         className={cn(
           "flex items-center gap-2.5 py-2.5 transition-colors",
-          outOfStock && "opacity-50"
+          outOfStock && "opacity-50",
         )}
       >
-        <div className="flex flex-1 min-w-0 items-center gap-2.5 cursor-pointer relative overflow-hidden" onClick={() => { setRippleId(item.id); setRippleKey(k => k + 1); setDetailItem(item); }}>
+        <div
+          className="flex flex-1 min-w-0 items-center gap-2.5 cursor-pointer relative overflow-hidden"
+          onClick={() => {
+            setRippleId(item.id);
+            setRippleKey((k) => k + 1);
+            setDetailItem(item);
+          }}
+        >
           {rippleId === item.id && (
             <span
               key={rippleKey}
@@ -240,19 +271,28 @@ export function MenuList({
               onAnimationEnd={() => setRippleId(null)}
             />
           )}
-          {item.image ? (
-            <Image
-              src={item.image}
-              alt={item.name}
-              width={56}
-              height={56}
-              className="size-14 shrink-0 rounded-lg object-cover"
-            />
-          ) : (
-            <div className="flex size-14 shrink-0 items-center justify-center rounded-lg bg-muted text-sm font-bold text-muted-foreground">
-              {item.name.charAt(0)}
-            </div>
-          )}
+          <div className="relative overflow-hidden rounded-lg">
+            {item.image ? (
+              <Image
+                src={item.image}
+                alt={item.name}
+                width={56}
+                height={56}
+                className="size-14 shrink-0 object-cover"
+              />
+            ) : (
+              <div className="flex size-14 shrink-0 items-center justify-center bg-muted text-sm font-bold text-muted-foreground">
+                {item.name.charAt(0)}
+              </div>
+            )}
+            {outOfStock && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+                  Sold Out
+                </span>
+              </div>
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium">{item.name}</div>
             <div className="text-sm font-semibold text-slate-900">
@@ -262,16 +302,38 @@ export function MenuList({
         </div>
         {outOfStock ? (
           <span className="shrink-0 text-xs text-muted-foreground">
-            Stok Habis
+            Sold Out
           </span>
         ) : inCart ? (
           <div className="flex shrink-0 items-center gap-1">
-            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, -1)}><Minus size="16" color="currentColor" /></Button>
-            <span className="flex w-4 justify-center text-xs font-medium">{inCart.quantity}</span>
-            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, 1)}><Add size="16" color="currentColor" /></Button>
+            <Button
+              size="icon-xs"
+              variant="outline"
+              className="size-6 rounded-full"
+              onClick={() => onChangeQty(item.id, -1)}
+            >
+              <Minus size="16" color="currentColor" />
+            </Button>
+            <span className="flex w-4 justify-center text-xs font-medium">
+              {inCart.quantity}
+            </span>
+            <Button
+              size="icon-xs"
+              variant="outline"
+              className="size-6 rounded-full"
+              onClick={() => onChangeQty(item.id, 1)}
+            >
+              <Add size="16" color="currentColor" />
+            </Button>
           </div>
         ) : (
-          <Button size="sm" className="h-7 px-2.5 text-xs" onClick={() => onAdd(item)}>Tambah</Button>
+          <Button
+            size="sm"
+            className="h-7 px-2.5 text-xs"
+            onClick={() => onAdd(item)}
+          >
+            Tambah
+          </Button>
         )}
       </div>
     );
@@ -286,10 +348,17 @@ export function MenuList({
         key={item.id}
         className={cn(
           "flex flex-col gap-2 rounded-lg border p-2.5 transition-colors",
-          outOfStock && "opacity-50"
+          outOfStock && "opacity-50",
         )}
       >
-        <div className="cursor-pointer relative overflow-hidden" onClick={() => { setRippleId(item.id); setRippleKey(k => k + 1); setDetailItem(item); }}>
+        <div
+          className="cursor-pointer relative overflow-hidden"
+          onClick={() => {
+            setRippleId(item.id);
+            setRippleKey((k) => k + 1);
+            setDetailItem(item);
+          }}
+        >
           {rippleId === item.id && (
             <span
               key={rippleKey}
@@ -297,19 +366,28 @@ export function MenuList({
               onAnimationEnd={() => setRippleId(null)}
             />
           )}
-          {item.image ? (
-            <Image
-              src={item.image}
-              alt={item.name}
-              width={160}
-              height={160}
-              className="aspect-square w-full rounded-md object-cover"
-            />
-          ) : (
-            <div className="flex aspect-square w-full items-center justify-center rounded-md bg-muted text-lg font-bold text-muted-foreground">
-              {item.name.charAt(0)}
-            </div>
-          )}
+          <div className="relative overflow-hidden rounded-md">
+            {item.image ? (
+              <Image
+                src={item.image}
+                alt={item.name}
+                width={160}
+                height={160}
+                className="aspect-square w-full object-cover"
+              />
+            ) : (
+              <div className="flex aspect-square w-full items-center justify-center bg-muted text-lg font-bold text-muted-foreground">
+                {item.name.charAt(0)}
+              </div>
+            )}
+            {outOfStock && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white">
+                  Sold Out
+                </span>
+              </div>
+            )}
+          </div>
           <div className="flex-1 mt-2">
             <div className="truncate text-sm font-medium">{item.name}</div>
             <div className="mt-0.5 text-sm font-semibold text-slate-900">
@@ -318,15 +396,39 @@ export function MenuList({
           </div>
         </div>
         {outOfStock ? (
-          <span className="text-center text-xs text-muted-foreground">Stok Habis</span>
+          <span className="text-center text-xs text-muted-foreground">
+            Sold Out
+          </span>
         ) : inCart ? (
           <div className="flex items-center justify-center gap-1">
-            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, -1)}><Minus size="16" color="currentColor" /></Button>
-            <span className="flex w-4 justify-center text-xs font-medium">{inCart.quantity}</span>
-            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, 1)}><Add size="16" color="currentColor" /></Button>
+            <Button
+              size="icon-xs"
+              variant="outline"
+              className="size-6 rounded-full"
+              onClick={() => onChangeQty(item.id, -1)}
+            >
+              <Minus size="16" color="currentColor" />
+            </Button>
+            <span className="flex w-4 justify-center text-xs font-medium">
+              {inCart.quantity}
+            </span>
+            <Button
+              size="icon-xs"
+              variant="outline"
+              className="size-6 rounded-full"
+              onClick={() => onChangeQty(item.id, 1)}
+            >
+              <Add size="16" color="currentColor" />
+            </Button>
           </div>
         ) : (
-          <Button size="sm" className="h-7 w-full text-xs" onClick={() => onAdd(item)}>Tambah</Button>
+          <Button
+            size="sm"
+            className="h-7 w-full text-xs"
+            onClick={() => onAdd(item)}
+          >
+            Tambah
+          </Button>
         )}
       </div>
     );
