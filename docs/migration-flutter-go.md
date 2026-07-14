@@ -40,16 +40,16 @@ Go memverifikasi password lewat jembatan ke Better Auth. **Sudah diuji server-to
 
 **Kontrak endpoint (acuan kode Go):**
 
-`POST /api/auth/sign-in/username`
-- Request: `Content-Type: application/json`, body `{"username":"<u>","password":"<p>"}`
+`POST /api/auth/sign-in/email`
+- Request: `Content-Type: application/json`, body `{"email":"<email>","password":"<p>"}`
 - **Sukses → HTTP 200**, body JSON berisi yang Go butuhkan:
   ```json
   { "redirect": false, "token": "<session-token>",
     "user": { "id": "...", "role": "ADMIN|CASHIER", "name": "...",
-              "username": "...", "banned": false, ... } }
+              "email": "...", "banned": false, ... } }
   ```
   Go ambil `user.id`, `user.role`, `user.name`. **Wajib cek `user.role == "CASHIER"`** sebelum terbitkan JWT (admin tidak login lewat app kasir). Cek juga `user.banned`.
-- **Password salah / user tak ada → HTTP 401**, body `{"message":"Invalid username or password","code":"INVALID_USERNAME_OR_PASSWORD"}`.
+- **Password salah / user tak ada → HTTP 401**, body `{"message":"Invalid email or password","code":"INVALID_EMAIL_OR_PASSWORD"}`.
 
 Catatan: response juga mengeset cookie `better-auth.session_token` — Go **abaikan** cookie itu, cukup baca body JSON lalu terbitkan JWT-nya sendiri.
 
@@ -69,6 +69,7 @@ Go reuse env yang sama dengan web + tambahan baru:
 | `REDIS_URL` | sama dgn web | cache menu (opsional, boleh ditunda) |
 | `JWT_SECRET` | **baru** | tanda tangan JWT Go |
 | `BETTER_AUTH_URL` | **baru** | URL Next.js untuk jembatan verifikasi |
+| `INTERNAL_NOTIFY_SECRET` | **baru** | Secret dashboard → Go untuk meneruskan event QR |
 
 ### 3.5 Cek toolchain ⬜
 - Pastikan `go` (>=1.22) dan `flutter` terpasang di mesin. Fase 1 diawali dengan verifikasi ini.
@@ -124,4 +125,4 @@ Logika inti yang harus ditulis ulang di Go, beserta acuan kodenya:
 - **Flutter:** `flutter analyze` bersih, `flutter build apk` sukses. **Uji manual di tablet Android nyata** — printing Bluetooth & UI tak bisa diotomasi.
 - **Printer:** uji cetak fisik ke RPP02N; konfirmasi struk + catatan per-item keluar benar.
 - **Regresi web:** admin & customer QR Next.js tetap jalan — `npm run build` tetap bersih.
-- **Auth jembatan:** login Flutter dengan kredensial kasir nyata → Go verifikasi via Better Auth → JWT valid.
+- **Auth jembatan:** login Flutter dengan email + password kasir nyata → Go verifikasi via Better Auth → JWT valid.

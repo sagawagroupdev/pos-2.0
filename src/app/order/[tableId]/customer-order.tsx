@@ -10,7 +10,7 @@ import { CartBar } from "./cart-bar";
 import { ConfirmStep } from "./confirm-step";
 import { CheckoutStep } from "./checkout-step";
 import { OrderSuccess } from "./order-success";
-import type { OrderType, PaymentMethod, Stage, MenuItem } from "./types";
+import type { OrderType, PaymentMethod, Stage} from "./types";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { ArrowRight2 } from "iconsax-react";
@@ -22,6 +22,7 @@ import type { BusinessHours } from "@/lib/business-hours";
 export function CustomerOrder({
   tableId,
   tableNumber,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   outletAddress: _outletAddress,
   menu,
   storeName,
@@ -47,6 +48,8 @@ export function CustomerOrder({
   const [submitting, setSubmitting] = useState(false);
   const [globalNote, setGlobalNote] = useState("");
   const [doneStatus, setDoneStatus] = useState<string | null>(null);
+  const [doneOrderId, setDoneOrderId] = useState<string | null>(null);
+  const [donePaymentMethod, setDonePaymentMethod] = useState<"CASH" | "QRIS">("CASH");
   const [outletRipple, setOutletRipple] = useState(0);
   const router = useRouter();
 
@@ -84,19 +87,22 @@ export function CustomerOrder({
   function handleOrderAgain() {
     cart.clearCart();
     setDoneStatus(null);
+    setDoneOrderId(null);
     navigate("menu");
   }
 
   function handleSubmit(data: {
     name: string;
     phone: string;
+    email: string;
     paymentMethod: PaymentMethod;
   }) {
     setSubmitting(true);
     submitQrOrder({
       tableId,
       customerName: data.name,
-      customerPhone: data.phone,
+      customerPhone: data.phone || undefined,
+      customerEmail: data.email || undefined,
       paymentMethod: data.paymentMethod,
       type: orderType,
       note: globalNote || undefined,
@@ -113,6 +119,8 @@ export function CustomerOrder({
       }
       cart.clearCart();
       setDoneStatus(res.status);
+      setDoneOrderId(res.orderId);
+      setDonePaymentMethod(data.paymentMethod);
       navigate("done");
     });
   }
@@ -145,7 +153,9 @@ export function CustomerOrder({
     return (
       <div key="done" className="animate-in slide-in-from-right duration-300">
         <OrderSuccess
+          orderId={doneOrderId}
           status={doneStatus}
+          paymentMethod={donePaymentMethod}
           tableNumber={tableNumber}
           qrisImageUrl={qrisImageUrl}
           onOrderAgain={handleOrderAgain}
@@ -198,6 +208,7 @@ export function CustomerOrder({
       >
         <div className="mx-auto max-w-md">
           <CheckoutStep
+            tableNumber={tableNumber}
             subtotal={cart.subtotal}
             tax={cart.tax}
             taxRate={taxRate}

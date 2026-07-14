@@ -5,6 +5,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db";
 import { requireRole } from "@/lib/session";
 import { notifyOrderUpdated } from "@/lib/realtime";
+import { notifyCashierApp } from "@/lib/go-realtime";
 
 export type ActionResult = { ok: boolean; error?: string };
 
@@ -36,6 +37,11 @@ export async function deleteOrderHistory(
   });
 
   await notifyOrderUpdated(session.user.id);
+  await notifyCashierApp({
+    cashierId: session.user.id,
+    event: "order-updated",
+    orderId,
+  });
   revalidatePath("/orders");
   return { ok: true };
 }
@@ -54,6 +60,11 @@ export async function confirmQrOrder(orderId: string): Promise<ActionResult> {
     data: { status: "PAID", paidAmount: order.total },
   });
   await notifyOrderUpdated(session.user.id);
+  await notifyCashierApp({
+    cashierId: session.user.id,
+    event: "order-updated",
+    orderId,
+  });
   revalidatePath("/orders");
   revalidatePath("/pos");
   return { ok: true };
@@ -84,6 +95,11 @@ export async function cancelQrOrder(orderId: string): Promise<ActionResult> {
   });
 
   await notifyOrderUpdated(session.user.id);
+  await notifyCashierApp({
+    cashierId: session.user.id,
+    event: "order-updated",
+    orderId,
+  });
   revalidatePath("/orders");
   revalidatePath("/pos");
   return { ok: true };

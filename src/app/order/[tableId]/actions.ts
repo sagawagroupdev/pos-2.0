@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { createOrder } from "@/lib/order";
 import { invalidateMenuCache } from "@/lib/menu";
 import { notifyNewQrOrder } from "@/lib/realtime";
+import { notifyCashierApp } from "@/lib/go-realtime";
 import { isOpenNow } from "@/lib/settings";
 
 const lineSchema = z.object({
@@ -16,7 +17,8 @@ const lineSchema = z.object({
 const qrOrderSchema = z.object({
   tableId: z.string().min(1),
   customerName: z.string().trim().min(1, "Nama wajib diisi"),
-  customerPhone: z.string().trim().min(6, "No. telepon tidak valid"),
+  customerPhone: z.string().trim().optional().or(z.literal("")),
+  customerEmail: z.string().trim().email("Format email tidak valid").optional().or(z.literal("")),
   paymentMethod: z.enum(["CASH", "QRIS"]),
   type: z.enum(["DINE_IN", "TAKE_AWAY"]),
   note: z.string().trim().optional(),
@@ -54,7 +56,6 @@ export async function submitQrOrder(
         return { ok: false, error: check.message ?? "Outlet sedang tutup. Silakan pesan kembali saat jam operasional." };
       }
     } catch {
-      // parse error — abaikan, biarkan order lanjut
     }
   }
 
@@ -73,7 +74,8 @@ export async function submitQrOrder(
       paymentMethod: parsed.data.paymentMethod,
       status,
       customerName: parsed.data.customerName,
-      customerPhone: parsed.data.customerPhone,
+      customerPhone: parsed.data.customerPhone || undefined,
+      customerEmail: parsed.data.customerEmail || undefined,
       cashierId: table.cashierId,
       tableId: table.id,
       tableNumber: table.number,
@@ -86,6 +88,11 @@ export async function submitQrOrder(
       tableNumber: order.tableNumber,
       total: order.total,
       paymentMethod: parsed.data.paymentMethod,
+    });
+    await notifyCashierApp({
+      cashierId: table.cashierId,
+      event: "new-qr-order",
+      orderId: order.id,
     });
 
     return { ok: true, orderId: order.id, status };
