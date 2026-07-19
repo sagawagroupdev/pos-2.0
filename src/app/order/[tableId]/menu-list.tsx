@@ -2,7 +2,8 @@
 
 import React, { useRef, useState, useEffect, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { Element3, RowVertical, ArrowRight2, Minus, Add } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon, ArrowRight01Icon, DashboardSquare01Icon, ListViewIcon, MinusSignIcon } from "@hugeicons/core-free-icons";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -118,9 +119,9 @@ export function MenuList({
             className="flex items-center border-b-2 border-transparent px-2 py-3 text-foreground"
           >
             {viewMode === "grid" ? (
-              <RowVertical size="18" color="currentColor" />
+              <HugeiconsIcon icon={ListViewIcon} size="18" color="currentColor" strokeWidth={1.5} />
             ) : (
-              <Element3 size="18" color="currentColor" />
+              <HugeiconsIcon icon={DashboardSquare01Icon} size="18" color="currentColor" strokeWidth={1.5} />
             )}
           </RippleButton>
 
@@ -199,9 +200,11 @@ export function MenuList({
 
         {canScrollRight && (
           <div className="absolute right-0 inset-y-0 z-10 flex items-center bg-linear-to-l from-background via-background/80 to-transparent w-8 justify-end pr-1 pointer-events-none">
-            <ArrowRight2
+            <HugeiconsIcon
+              icon={ArrowRight01Icon}
               size="14"
               color="currentColor"
+              strokeWidth={1.5}
               className="text-muted-foreground/60"
             />
           </div>
@@ -312,7 +315,7 @@ export function MenuList({
               className="size-6 rounded-full"
               onClick={() => onChangeQty(item.id, -1)}
             >
-              <Minus size="16" color="currentColor" />
+              <HugeiconsIcon icon={MinusSignIcon} size="16" color="currentColor" strokeWidth={1.5} />
             </Button>
             <span className="flex w-4 justify-center text-xs font-medium">
               {inCart.quantity}
@@ -323,7 +326,7 @@ export function MenuList({
               className="size-6 rounded-full"
               onClick={() => onChangeQty(item.id, 1)}
             >
-              <Add size="16" color="currentColor" />
+              <HugeiconsIcon icon={Add01Icon} size="16" color="currentColor" strokeWidth={1.5} />
             </Button>
           </div>
         ) : (
@@ -407,7 +410,7 @@ export function MenuList({
               className="size-6 rounded-full"
               onClick={() => onChangeQty(item.id, -1)}
             >
-              <Minus size="16" color="currentColor" />
+              <HugeiconsIcon icon={MinusSignIcon} size="16" color="currentColor" strokeWidth={1.5} />
             </Button>
             <span className="flex w-4 justify-center text-xs font-medium">
               {inCart.quantity}
@@ -418,7 +421,7 @@ export function MenuList({
               className="size-6 rounded-full"
               onClick={() => onChangeQty(item.id, 1)}
             >
-              <Add size="16" color="currentColor" />
+              <HugeiconsIcon icon={Add01Icon} size="16" color="currentColor" strokeWidth={1.5} />
             </Button>
           </div>
         ) : (

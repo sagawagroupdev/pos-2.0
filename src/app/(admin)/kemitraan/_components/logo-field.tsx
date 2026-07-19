@@ -3,7 +3,8 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Upload, X } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Cancel01Icon, Upload01Icon } from "@hugeicons/core-free-icons";
 
 // ---------- Upload utility ----------
 export async function uploadLogo(file: File): Promise<string | null> {
@@ -122,7 +123,7 @@ export function LogoField({
                 onClick={handleDelete}
                 className="flex size-8 shrink-0 items-center justify-center rounded-md hover:bg-muted"
               >
-                <X size="16" />
+                <HugeiconsIcon icon={Cancel01Icon} size="16" color="currentColor" strokeWidth={1.5} />
               </button>
             </>
           ) : (
@@ -143,7 +144,7 @@ export function LogoField({
                 onClick={handleDelete}
                 className="flex size-8 shrink-0 items-center justify-center rounded-md hover:bg-muted"
               >
-                <X size="16" />
+                <HugeiconsIcon icon={Cancel01Icon} size="16" color="currentColor" strokeWidth={1.5} />
               </button>
             </>
           )}
@@ -164,7 +165,7 @@ export function LogoField({
             handleFile(e.dataTransfer.files[0]);
           }}
         >
-          <Upload size="24" className="text-muted-foreground" />
+          <HugeiconsIcon icon={Upload01Icon} size="24" color="currentColor" strokeWidth={1.5} className="text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
             Klik atau drag &amp; drop logo
           </span>

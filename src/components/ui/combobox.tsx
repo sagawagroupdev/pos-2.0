@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { CheckIcon, ChevronsUpDownIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowUpDownIcon, Tick02Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -47,7 +48,7 @@ function Combobox({
             )}
           >
             {selected ? selected.label : placeholder}
-            <ChevronsUpDownIcon className="ml-auto size-4 shrink-0 opacity-50" />
+            <HugeiconsIcon icon={ArrowUpDownIcon} color="currentColor" strokeWidth={1.5} className="ml-auto size-4 shrink-0 opacity-50" />
           </Button>
         }
       />
@@ -73,7 +74,7 @@ function Combobox({
               >
                 <span className="flex-1 truncate">{o.label}</span>
                 {value === o.value && (
-                  <CheckIcon className="absolute right-2 size-4" />
+                  <HugeiconsIcon icon={Tick02Icon} color="currentColor" strokeWidth={1.5} className="absolute right-2 size-4" />
                 )}
               </button>
             ))

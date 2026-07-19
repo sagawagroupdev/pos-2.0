@@ -17,7 +17,8 @@ import { useDraftsUI } from "./drafts-ui-context";
 import { useQrOrderSheetUI } from "./qr-order-sheet-ui-context";
 import { usePrinter } from "./printer-context";
 import type { MenuCategory } from "@/lib/menu";
-import { SearchNormal1 } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Search01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -541,9 +542,11 @@ export function PosTerminal({
                 </ButtonGroup>
               </ScrollArea>
               <div className="relative w-56 shrink-0">
-                <SearchNormal1
+                <HugeiconsIcon
+                  icon={Search01Icon}
                   size={16}
                   color="currentColor"
+                  strokeWidth={1.5}
                   className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
                 />
                 <Input
@@ -743,4 +746,3 @@ export function PosTerminal({
     </div>
   );
 }
-

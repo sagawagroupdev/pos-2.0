@@ -1,4 +1,4 @@
-@import "tailwindcss";
+﻿@import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
@@ -195,4 +195,28 @@
   .scrollbar-none::-webkit-scrollbar {
     display: none;
   }
+}
+
+html.scrollbar-accent {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
+}
+html.scrollbar-accent::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.scrollbar-accent::-webkit-scrollbar-track {
+  background: transparent !important;
+}
+html.scrollbar-accent::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.4) !important;
+  border-radius: 6px;
+}
+html.scrollbar-accent::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--muted-foreground) / 0.6) !important;
+}
+html.scrollbar-accent::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }

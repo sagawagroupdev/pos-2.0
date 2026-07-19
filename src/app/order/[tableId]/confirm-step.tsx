@@ -2,7 +2,8 @@
 
 import { useMemo } from "react";
 import Image from "next/image";
-import { ArrowLeft, Add, Minus } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon, ArrowLeft01Icon, MinusSignIcon } from "@hugeicons/core-free-icons";
 import { Input } from "@/components/ui/input";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { rupiah } from "@/lib/format";
@@ -60,7 +61,7 @@ export function ConfirmStep({
           onClick={onBack}
           className="flex size-8 shrink-0 items-center justify-center rounded-full hover:bg-muted"
         >
-          <ArrowLeft size="20" color="currentColor" />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size="20" color="currentColor" strokeWidth={1.5} />
         </RippleButton>
         <div className="flex-1">
           <h1 className="text-base font-semibold">Konfirmasi Pesanan</h1>
@@ -114,7 +115,7 @@ export function ConfirmStep({
                     </p>
                     {!item.isAvailable ? (
                       <div className="mt-1.5 flex w-full cursor-not-allowed items-center justify-center gap-1 rounded-lg bg-muted py-1 text-[11px] font-semibold text-muted-foreground">
-                        <Add size="12" color="currentColor" />
+                        <HugeiconsIcon icon={Add01Icon} size="12" color="currentColor" strokeWidth={1.5} />
                         Sold Out
                       </div>
                     ) : (
@@ -122,7 +123,7 @@ export function ConfirmStep({
                         onClick={() => onAddItem(item)}
                         className="mt-1.5 flex w-full items-center justify-center gap-1 rounded-lg bg-primary py-1 text-[11px] font-semibold text-primary-foreground active:scale-[0.95]"
                       >
-                        <Add size="12" color="currentColor" />
+                        <HugeiconsIcon icon={Add01Icon} size="12" color="currentColor" strokeWidth={1.5} />
                         Tambah
                       </RippleButton>
                     )}
@@ -157,7 +158,7 @@ export function ConfirmStep({
                       onClick={() => onChangeQty(c.itemId, -1)}
                       className="flex size-7 items-center justify-center rounded-full border hover:bg-muted active:scale-90"
                     >
-                      <Minus size="14" color="currentColor" />
+                      <HugeiconsIcon icon={MinusSignIcon} size="14" color="currentColor" strokeWidth={1.5} />
                     </RippleButton>
                     <span className="flex w-5 justify-center text-sm font-medium">
                       {c.quantity}
@@ -166,7 +167,7 @@ export function ConfirmStep({
                       onClick={() => onChangeQty(c.itemId, 1)}
                       className="flex size-7 items-center justify-center rounded-full border hover:bg-muted active:scale-90"
                     >
-                      <Add size="14" color="currentColor" />
+                      <HugeiconsIcon icon={Add01Icon} size="14" color="currentColor" strokeWidth={1.5} />
                     </RippleButton>
                   </div>
                   <Input

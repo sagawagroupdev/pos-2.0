@@ -1,7 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { Shop } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Store01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { SubPartnershipRow } from "../types";
@@ -31,7 +32,7 @@ export function SubItem({
           />
         ) : (
           <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted">
-            <Shop size="16" color="currentColor" />
+            <HugeiconsIcon icon={Store01Icon} size="16" color="currentColor" strokeWidth={1.5} />
           </div>
         )}
         <span className="truncate font-medium">{sub.name}</span>

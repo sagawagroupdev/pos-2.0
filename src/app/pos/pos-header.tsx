@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Home2, Maximize2, Save2, MenuBoard, Notification, Printer } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { FloppyDiskIcon, FullScreenIcon, Home01Icon, LicenseDraftFreeIcons, Notification01Icon, PrinterIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -28,7 +28,6 @@ export function PosHeader({
   storeName: string;
   cashierId: string;
 }) {
-  const router = useRouter();
   const { cashierName, setCashierName } = useCashier();
   const printer = usePrinter();
   const { enabled: draftsEnabled, count: draftCount, setOpen: setDraftsOpen } =
@@ -78,7 +77,7 @@ export function PosHeader({
             <BreadcrumbLink
               render={
                 <Link href="/overview" className="flex items-center gap-1.5">
-                  <Home2 size={16} variant="Linear" color="currentColor" />
+                  <HugeiconsIcon icon={Home01Icon} size={16} color="currentColor" strokeWidth={1.5} />
                   Overview
                 </Link>
               }
@@ -86,7 +85,7 @@ export function PosHeader({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>Kasir (POS)</BreadcrumbPage>
+            <BreadcrumbPage>Kasir</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
@@ -113,7 +112,7 @@ export function PosHeader({
             disabled={!dirty}
             aria-label="Simpan nama kasir"
           >
-            <Save2 size={20} variant="Linear" color="currentColor" />
+            <HugeiconsIcon icon={FloppyDiskIcon} size={20} color="currentColor" strokeWidth={1.5} />
           </Button>
         </div>
         {draftsEnabled && (
@@ -124,7 +123,7 @@ export function PosHeader({
             aria-label="Pesanan tertahan"
             className="relative"
           >
-            <MenuBoard size={24} variant="Linear" color="currentColor" />
+            <HugeiconsIcon icon={LicenseDraftFreeIcons} size={24} color="currentColor" strokeWidth={1.5} />
             {draftCount > 0 && (
               <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
                 {draftCount}
@@ -138,7 +137,7 @@ export function PosHeader({
           onClick={() => setQrOrderSheetOpen(true)}
           aria-label="Pesanan QR masuk"
         >
-          <Notification size={24} variant="Linear" color="currentColor" />
+          <HugeiconsIcon icon={Notification01Icon} size={24} color="currentColor" strokeWidth={1.5} />
         </Button>
         <Button
           variant="ghost"
@@ -147,7 +146,7 @@ export function PosHeader({
           onClick={printer.connected ? undefined : () => printer.connect()}
           className="relative"
         >
-          <Printer size={24} variant="Linear" color="currentColor" />
+          <HugeiconsIcon icon={PrinterIcon} size={24} color="currentColor" strokeWidth={1.5} />
           <span
             className={`absolute -right-1 -top-0.5 size-2.5 rounded-full ring-2 ring-background ${
               printer.connected ? "bg-emerald-500" : "bg-red-500"
@@ -160,7 +159,7 @@ export function PosHeader({
           onClick={toggleFullscreen}
           aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
         >
-          <Maximize2 size={24} variant="Linear" color="currentColor" />
+          <HugeiconsIcon icon={FullScreenIcon} size={24} color="currentColor" strokeWidth={1.5} />
         </Button>
       </div>
     </header>

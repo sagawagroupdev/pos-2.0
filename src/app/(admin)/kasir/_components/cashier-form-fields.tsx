@@ -15,8 +15,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { format, parse } from "date-fns";
 import { id } from "date-fns/locale";
-import { CalendarIcon } from "lucide-react";
-import { EyeSlash, Eye } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Calendar01Icon, ViewIcon, ViewOffIcon } from "@hugeicons/core-free-icons";
 import type { PartnershipOption, CashierRow } from "../cashier-manager";
 
 export function CashierFormFields({
@@ -84,7 +84,7 @@ export function CashierFormFields({
               className="absolute inset-y-0 right-0 flex items-center pr-2 text-muted-foreground hover:text-foreground"
               onClick={() => setPwVisible((p) => !p)}
             >
-              {pwVisible ? <Eye size="18" color="currentColor" /> : <EyeSlash size="18" color="currentColor" />}
+              {pwVisible ? <HugeiconsIcon icon={ViewIcon} size="18" color="currentColor" strokeWidth={1.5} /> : <HugeiconsIcon icon={ViewOffIcon} size="18" color="currentColor" strokeWidth={1.5} />}
             </button>
           </div>
         </div>
@@ -100,7 +100,7 @@ export function CashierFormFields({
             <PopoverTrigger
               render={
                 <Button variant="outline" role="combobox" className="w-full justify-start font-normal">
-                  <CalendarIcon className="mr-2 size-4 shrink-0" />
+                  <HugeiconsIcon icon={Calendar01Icon} color="currentColor" strokeWidth={1.5} className="mr-2 size-4 shrink-0" />
                   {parsedDate ? format(parsedDate, "dd MMMM yyyy", { locale: id }) : <span className="text-muted-foreground">Pilih tanggal</span>}
                 </Button>
               }

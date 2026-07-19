@@ -13,7 +13,8 @@ import { OrderSuccess } from "./order-success";
 import type { OrderType, PaymentMethod, Stage} from "./types";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { ArrowRight2 } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import { MenuSearch } from "./menu-search";
 import { RippleButton } from "@/components/ui/ripple-button";
 import { isOpenNow } from "@/lib/business-hours";
@@ -364,7 +365,7 @@ export function CustomerOrder({
                     : ""}
               </p>
             </div>
-            <ArrowRight2 size="16" color="currentColor" className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <HugeiconsIcon icon={ArrowRight01Icon} size="16" color="currentColor" strokeWidth={1.5} className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
           </button>
         </div>
 

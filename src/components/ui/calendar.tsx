@@ -15,7 +15,8 @@ import {
   subMonths,
 } from "date-fns"
 import { id } from "date-fns/locale"
-import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -56,13 +57,13 @@ function Calendar({
       {/* header */}
       <div className="flex items-center justify-between mb-3">
         <Button size="icon-xs" variant="ghost" onClick={prev}>
-          <ChevronLeftIcon className="size-4" />
+          <HugeiconsIcon icon={ArrowLeft01Icon} color="currentColor" strokeWidth={1.5} className="size-4" />
         </Button>
         <span className="text-sm font-medium">
           {format(displayMonth, "MMMM yyyy", { locale: id })}
         </span>
         <Button size="icon-xs" variant="ghost" onClick={next}>
-          <ChevronRightIcon className="size-4" />
+          <HugeiconsIcon icon={ArrowRight01Icon} color="currentColor" strokeWidth={1.5} className="size-4" />
         </Button>
       </div>
 

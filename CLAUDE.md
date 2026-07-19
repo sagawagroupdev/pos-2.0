@@ -28,7 +28,7 @@ Sistem Kasir POS + QR Table Ordering. Stack: Next.js 16, React 19, Prisma 7 (Neo
 - `Select onValueChange` memberi `string | null` — handle null-nya.
 
 ## Ikon
-- Pakai **`iconsax-react`** (bukan `react-iconsax` yang rusak untuk Next.js). Selalu set `color="currentColor"` agar ikut warna tema; default-nya `#000` (tak terlihat di tombol ghost/tema gelap).
+- Pakai official free HugeIcons: **`@hugeicons/react`** + **`@hugeicons/core-free-icons`**. Render dengan `HugeiconsIcon` dan selalu set `color="currentColor"` agar ikut warna tema.
 
 ## R2 / gambar
 - `R2_PUBLIC_URL` = custom domain (`r2.dev` diblokir ISP Indonesia). `next.config.ts` menarik hostname-nya otomatis untuk `next/image`.

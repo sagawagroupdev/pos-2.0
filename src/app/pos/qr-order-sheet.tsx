@@ -3,7 +3,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowRight2, Reserve, SearchNormal } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon, Restaurant01Icon, Search01Icon } from "@hugeicons/core-free-icons";
 import { rupiah } from "@/lib/format";
 import { claimQrOrderByIdAction } from "./actions";
 import type { QrOrderListItem } from "./actions";
@@ -81,9 +82,11 @@ export function QrOrderSheet({
           </SheetDescription>
         </SheetHeader>
         <div className="relative px-3 pb-2">
-          <SearchNormal
+          <HugeiconsIcon
+            icon={Search01Icon}
             size="16"
             color="currentColor"
+            strokeWidth={1.5}
             className="pointer-events-none absolute left-6 top-1/3 -translate-y-1/2 text-muted-foreground"
           />
           <input
@@ -111,7 +114,7 @@ export function QrOrderSheet({
                     <div className="flex items-center gap-2">
                       {o.tableNumber && (
                         <span className="flex items-center gap-0.5 rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium">
-                          <Reserve size={12} color="currentColor" />
+                          <HugeiconsIcon icon={Restaurant01Icon} size={12} color="currentColor" strokeWidth={1.5} />
                           {o.tableNumber}
                         </span>
                       )}
@@ -133,7 +136,7 @@ export function QrOrderSheet({
                     disabled={claimingId === o.id}
                     aria-label={`Muat pesanan ${o.orderNumber}`}
                   >
-                    <ArrowRight2 size={14} color="currentColor" />
+                    <HugeiconsIcon icon={ArrowRight01Icon} size={14} color="currentColor" strokeWidth={1.5} />
                     {claimingId === o.id ? "..." : "Muat"}
                   </Button>
                 </li>

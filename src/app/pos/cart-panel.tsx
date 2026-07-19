@@ -1,7 +1,8 @@
 ﻿"use client";
 
 import Image from "next/image";
-import { Trash, Profile, Reserve, Bag2, Box, Monitor } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Dish01Icon, Delete02Icon, Restaurant01Icon, ShoppingBag01Icon, UserIcon, TableRoundIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -117,7 +118,7 @@ export function CartPanel({
               onClick={onClear}
               className="flex items-center gap-1 text-xs font-medium text-primary transition-opacity hover:opacity-70"
             >
-              <Trash size={14} color="currentColor" />
+              <HugeiconsIcon icon={Delete02Icon} size={14} color="currentColor" strokeWidth={1.5} />
               Hapus semua
             </button>
           )}
@@ -130,9 +131,11 @@ export function CartPanel({
       <div className="flex-1 overflow-y-auto pb-57.5">
           <div className="flex flex-col gap-2 px-2 pb-2">
             <div className="relative">
-              <Profile
+              <HugeiconsIcon
+                icon={UserIcon}
                 size={16}
                 color="currentColor"
+                strokeWidth={1.5}
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
               />
               <Input
@@ -144,9 +147,11 @@ export function CartPanel({
             </div>
 
             <div className="relative">
-              <Monitor
+              <HugeiconsIcon
+                icon={TableRoundIcon}
                 size={16}
                 color="currentColor"
+                strokeWidth={1.5}
                 className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
               />
               <Input
@@ -176,7 +181,7 @@ export function CartPanel({
                           />
                         ) : (
                           <span className="flex size-full items-center justify-center text-muted-foreground">
-                            <Box size={16} color="currentColor" />
+                            <HugeiconsIcon icon={Dish01Icon} size={16} color="currentColor" strokeWidth={1.5} />
                           </span>
                         )}
                       </div>
@@ -240,7 +245,7 @@ export function CartPanel({
                       : "border-border bg-muted/40 hover:bg-muted"
                   )}
                 >
-                  <Reserve size={16} color="currentColor" />
+                  <HugeiconsIcon icon={Restaurant01Icon} size={16} color="currentColor" strokeWidth={1.5} />
                   Dine In
                 </button>
                 <button
@@ -253,7 +258,7 @@ export function CartPanel({
                       : "border-border bg-muted/40 hover:bg-muted"
                   )}
                 >
-                  <Bag2 size={16} color="currentColor" />
+                  <HugeiconsIcon icon={ShoppingBag01Icon} size={16} color="currentColor" strokeWidth={1.5} />
                   Take Away
                 </button>
               </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { BagHappy } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ShoppingBag01Icon } from "@hugeicons/core-free-icons";
 import { rupiah } from "@/lib/format";
 
 export function CartBar({
@@ -37,7 +38,7 @@ export function CartBar({
         )}
         <span className="flex items-center gap-3">
           <span className="relative">
-            <BagHappy size="22" color="currentColor" />
+            <HugeiconsIcon icon={ShoppingBag01Icon} size="22" color="currentColor" strokeWidth={1.5} />
             <span className="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-background text-[10px] font-bold text-primary">
               {itemCount}
             </span>

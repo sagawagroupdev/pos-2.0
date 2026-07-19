@@ -3,7 +3,8 @@
 import { useState, useTransition } from "react";
 import Image from "next/image";
 import { toast } from "sonner";
-import { Shop } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Store01Icon } from "@hugeicons/core-free-icons";
 import {
   createPartnership,
   updatePartnership,
@@ -221,7 +222,7 @@ export function KemitraanManager({
                     {p.logo ? (
                       <Image src={p.logo} alt="" width={40} height={40} className="size-10 rounded object-cover" />
                     ) : (
-                      <Shop size="20" color="currentColor" />
+                      <HugeiconsIcon icon={Store01Icon} size="20" color="currentColor" strokeWidth={1.5} />
                     )}
                   </div>
                   <div>

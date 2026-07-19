@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Eye, ArrowRight2, Trash } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowRight01Icon, Delete02Icon, ViewIcon } from "@hugeicons/core-free-icons";
 import type { DraftOrder } from "./pos-terminal";
 import { rupiah } from "@/lib/format";
 import { discardDraft } from "./actions";
@@ -136,7 +137,7 @@ export function DraftSheet({
                           />
                         }
                       >
-                        <Eye size={16} color="currentColor" />
+                        <HugeiconsIcon icon={ViewIcon} size={16} color="currentColor" strokeWidth={1.5} />
                       </TooltipTrigger>
                       <TooltipContent>Detail</TooltipContent>
                     </Tooltip>
@@ -270,7 +271,7 @@ export function DraftSheet({
                       setDetail(null);
                     }}
                   >
-                    <ArrowRight2 size={16} color="currentColor" />
+                    <HugeiconsIcon icon={ArrowRight01Icon} size={16} color="currentColor" strokeWidth={1.5} />
                     Lanjutkan
                   </Button>
 
@@ -280,7 +281,7 @@ export function DraftSheet({
                     disabled={pending}
                     aria-label="Hapus pesanan"
                   >
-                    <Trash size={16} color="currentColor" />
+                    <HugeiconsIcon icon={Delete02Icon} size={16} color="currentColor" strokeWidth={1.5} />
                   </Button>
                 </div>
               </div>

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { ArrowLeft01Icon } from "@hugeicons/core-free-icons";
 import Image from "next/image";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -71,7 +72,7 @@ export function CheckoutStep({
     <div className="flex min-h-screen flex-col">
       <header className="sticky top-0 z-10 flex items-center gap-3 border-b bg-background p-4">
         <Button variant="ghost" size="icon-sm" onClick={onBack}>
-          <ArrowLeft size="20" color="currentColor" />
+          <HugeiconsIcon icon={ArrowLeft01Icon} size="20" color="currentColor" strokeWidth={1.5} />
         </Button>
         <h1 className="text-lg font-semibold">Data &amp; Pembayaran</h1>
       </header>

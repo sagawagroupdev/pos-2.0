@@ -13,29 +13,34 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { HugeiconsIcon } from "@hugeicons/react";
 import {
-  Element,
-  Profile2User,
-  Shop,
-  DocumentText1,
-  Setting2,
-  Logout,
-  MenuBoard,
-  SidebarLeft,
-  SidebarRight,
-} from "iconsax-react";
+  CashierIcon,
+  DashboardSquare01Icon,
+  File01Icon,
+  Logout01Icon,
+  MenuRestaurantIcon,
+  QrCodeIcon,
+  Settings01Icon,
+  SidebarLeftIcon,
+  SidebarRightIcon,
+  Store01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 
 export type NavItem = { href: string; label: string };
 
 const ICON_MAP: Record<string, React.ReactNode> = {
-  "/dashboard": <Element color="currentColor" size={20} />,
-  "/overview": <Element color="currentColor" size={20} />,
-  "/pos": <MenuBoard color="currentColor" size={20} />,
-  "/orders": <DocumentText1 color="currentColor" size={20} />,
-  "/kasir": <Profile2User color="currentColor" size={20} />,
-  "/kemitraan": <Shop color="currentColor" size={20} />,
-  "/laporan": <DocumentText1 color="currentColor" size={20} />,
-  "/settings": <Setting2 color="currentColor" size={20} />,
+  "/dashboard": <HugeiconsIcon icon={DashboardSquare01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/overview": <HugeiconsIcon icon={DashboardSquare01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/pos": <HugeiconsIcon icon={CashierIcon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/orders": <HugeiconsIcon icon={File01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/kasir": <HugeiconsIcon icon={UserGroupIcon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/kemitraan": <HugeiconsIcon icon={Store01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/laporan": <HugeiconsIcon icon={File01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/settings": <HugeiconsIcon icon={Settings01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/menu": <HugeiconsIcon icon={MenuRestaurantIcon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/qr-table": <HugeiconsIcon icon={QrCodeIcon} color="currentColor" size={20} strokeWidth={1.5} />,
 };
 
 export function DashboardShell({
@@ -64,7 +69,7 @@ export function DashboardShell({
     <div className="flex min-h-screen bg-muted/50">
       <aside
         className={cn(
-          "flex flex-col bg-muted/30 transition-all duration-300 shrink-0",
+          "flex flex-col bg-muted/30 transition-all duration-300 shrink-0 sticky top-0 h-screen",
           collapsed ? "w-16" : "w-60"
         )}
       >
@@ -137,12 +142,12 @@ export function DashboardShell({
             <TooltipTrigger
               render={
                 <Button
-                  variant="ghost"
+                  variant="destructive"
                   size={collapsed ? "icon" : "sm"}
                   className={collapsed ? "size-10" : "w-full"}
                   onClick={handleLogout}
                 >
-                  <Logout color="currentColor" size={20} />
+                  <HugeiconsIcon icon={Logout01Icon} color="currentColor" size={20} strokeWidth={1.5} />
                   {!collapsed && "Keluar"}
                 </Button>
               }
@@ -155,8 +160,8 @@ export function DashboardShell({
       </aside>
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 overflow-auto">
-        <div className="mt-2 mr-2 rounded-xl border bg-background min-h-[calc(100vh-0.5rem)] flex flex-col">
+      <main className="flex-1 min-w-0">
+        <div className="m-2 rounded-xl border bg-background min-h-[calc(100vh-1rem)] flex flex-col">
           {/* Page header */}
           <div className="flex items-center gap-3 px-4 h-12 border-b shrink-0">
             <Button
@@ -165,9 +170,9 @@ export function DashboardShell({
               onClick={() => setCollapsed((c) => !c)}
             >
               {collapsed ? (
-                <SidebarRight color="currentColor" size={24} />
+                <HugeiconsIcon icon={SidebarRightIcon} color="currentColor" size={24} strokeWidth={1.5} />
               ) : (
-                <SidebarLeft color="currentColor" size={24} />
+                <HugeiconsIcon icon={SidebarLeftIcon} color="currentColor" size={24} strokeWidth={1.5} />
               )}
             </Button>
             <div className="w-px h-5 bg-border" />

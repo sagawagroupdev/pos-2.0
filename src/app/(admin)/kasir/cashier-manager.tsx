@@ -47,7 +47,8 @@ import {
   DialogClose,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Search, MoreHorizontal } from "lucide-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { MoreHorizontalIcon, Search01Icon } from "@hugeicons/core-free-icons";
 
 export type SubPartnershipOption = { id: string; name: string; logo: string | null };
 export type PartnershipOption = {
@@ -188,7 +189,7 @@ export function CashierManager({
       {/* Search + Tambah */}
       <div className="flex items-center gap-4">
         <div className="relative flex-1">
-          <Search className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <HugeiconsIcon icon={Search01Icon} color="currentColor" strokeWidth={1.5} className="pointer-events-none absolute left-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Cari outlet..."
             value={search}
@@ -296,7 +297,7 @@ export function CashierManager({
                       <DropdownMenuTrigger
                         render={
                           <Button variant="ghost" size="icon-xs">
-                            <MoreHorizontal className="size-4" />
+                            <HugeiconsIcon icon={MoreHorizontalIcon} color="currentColor" strokeWidth={1.5} className="size-4" />
                           </Button>
                         }
                       />

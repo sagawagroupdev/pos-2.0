@@ -2,7 +2,8 @@
 
 import { useState, useMemo, useRef, useEffect } from "react";
 import Image from "next/image";
-import { SearchNormal, Add, Minus } from "iconsax-react";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { Add01Icon, MinusSignIcon, Search01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { rupiah } from "@/lib/format";
 import { RippleButton } from "@/components/ui/ripple-button";
@@ -106,7 +107,7 @@ export function MenuSearch({
           onClick={() => { setOpen(true); setQuery(""); }}
           className="flex size-8 items-center justify-center rounded-full bg-white/20 text-white backdrop-blur-sm hover:bg-white/30"
         >
-          <SearchNormal size="16" color="currentColor" />
+          <HugeiconsIcon icon={Search01Icon} size="16" color="currentColor" strokeWidth={1.5} />
         </RippleButton>
       </div>
 
@@ -128,7 +129,7 @@ export function MenuSearch({
             </div>
             <div className="shrink-0 px-4 pb-3">
               <div className="relative">
-                <SearchNormal size="18" color="currentColor" className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                <HugeiconsIcon icon={Search01Icon} size="18" color="currentColor" strokeWidth={1.5} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                 <input
                   ref={inputRef}
                   value={query}
@@ -191,9 +192,9 @@ export function MenuSearch({
           <span className="shrink-0 text-xs text-muted-foreground">Sold Out</span>
         ) : inCart ? (
           <div className="flex shrink-0 items-center gap-1">
-            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, -1)}><Minus size="16" color="currentColor" /></Button>
+            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, -1)}><HugeiconsIcon icon={MinusSignIcon} size="16" color="currentColor" strokeWidth={1.5} /></Button>
             <span className="flex w-4 justify-center text-xs font-medium">{inCart.quantity}</span>
-            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, 1)}><Add size="16" color="currentColor" /></Button>
+            <Button size="icon-xs" variant="outline" className="size-6 rounded-full" onClick={() => onChangeQty(item.id, 1)}><HugeiconsIcon icon={Add01Icon} size="16" color="currentColor" strokeWidth={1.5} /></Button>
           </div>
         ) : (
           <Button size="sm" className="h-7 px-2.5 text-xs" onClick={() => onAdd(item)}>Tambah</Button>
