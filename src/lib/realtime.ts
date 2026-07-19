@@ -27,9 +27,15 @@ if (process.env.NODE_ENV !== "production" && pusher) {
 
 export const NEW_QR_ORDER_EVENT = "new-qr-order";
 export const ORDER_UPDATED_EVENT = "order-updated";
+export const QR_ORDER_PAID_EVENT = "qr-order-paid";
+export const QR_ORDER_CANCELLED_EVENT = "qr-order-cancelled";
 
 export function cashierChannel(cashierId: string) {
   return `cashier-${cashierId}`;
+}
+
+export function customerOrderChannel(checkoutToken: string) {
+  return `order-${checkoutToken}`;
 }
 
 export type NewQrOrderPayload = {
@@ -37,7 +43,7 @@ export type NewQrOrderPayload = {
   customerName: string | null;
   tableNumber: string | null;
   total: number;
-  paymentMethod: "CASH" | "QRIS";
+  requestedPaymentMethod: "CASH" | "QRIS";
 };
 
 export async function notifyNewQrOrder(
@@ -62,5 +68,23 @@ export async function notifyOrderUpdated(cashierId: string) {
     await pusher.trigger(cashierChannel(cashierId), ORDER_UPDATED_EVENT, {});
   } catch {
     // realtime delivery is best-effort; dashboard polling is the fallback
+  }
+}
+
+export async function notifyQrOrderPaid(checkoutToken: string) {
+  if (!pusher) return;
+  try {
+    await pusher.trigger(customerOrderChannel(checkoutToken), QR_ORDER_PAID_EVENT, {});
+  } catch {
+    // best-effort
+  }
+}
+
+export async function notifyQrOrderCancelled(checkoutToken: string) {
+  if (!pusher) return;
+  try {
+    await pusher.trigger(customerOrderChannel(checkoutToken), QR_ORDER_CANCELLED_EVENT, {});
+  } catch {
+    // best-effort
   }
 }

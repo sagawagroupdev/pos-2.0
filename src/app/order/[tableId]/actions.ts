@@ -5,8 +5,14 @@ import { prisma } from "@/lib/db";
 import { createOrder } from "@/lib/order";
 import { invalidateMenuCache } from "@/lib/menu";
 import { notifyNewQrOrder } from "@/lib/realtime";
-import { notifyCashierApp } from "@/lib/go-realtime";
 import { isOpenNow } from "@/lib/settings";
+import { createCheckoutToken } from "@/lib/qr-checkout-protocol";
+import {
+  normalizeQrOrderInput,
+  normalizeQrOrderResult,
+  QR_ORDER_STATUS,
+  type QrOrderSubmitResult,
+} from "./qr-order-contract";
 
 const lineSchema = z.object({
   itemId: z.string().min(1),
@@ -27,9 +33,7 @@ const qrOrderSchema = z.object({
 
 export type QrOrderInput = z.infer<typeof qrOrderSchema>;
 
-export type QrSubmitResult =
-  | { ok: true; orderId: string; status: string }
-  | { ok: false; error: string };
+export type QrSubmitResult = QrOrderSubmitResult;
 
 export async function submitQrOrder(
   input: QrOrderInput
@@ -59,11 +63,8 @@ export async function submitQrOrder(
     }
   }
 
-  // CASH -> bayar di kasir (PENDING_PAYMENT); QRIS -> WAITING_CONFIRMATION
-  const status =
-    parsed.data.paymentMethod === "CASH"
-      ? "PENDING_PAYMENT"
-      : "WAITING_CONFIRMATION";
+  const preference = normalizeQrOrderInput(parsed.data);
+  const checkoutToken = createCheckoutToken();
 
   try {
     const order = await createOrder({
@@ -71,8 +72,10 @@ export async function submitQrOrder(
       note: parsed.data.note,
       channel: "QR",
       type: parsed.data.type,
-      paymentMethod: parsed.data.paymentMethod,
-      status,
+      paymentMethod: undefined,
+      requestedPaymentMethod: preference.paymentMethod,
+      checkoutToken,
+      status: QR_ORDER_STATUS,
       customerName: parsed.data.customerName,
       customerPhone: parsed.data.customerPhone || undefined,
       customerEmail: parsed.data.customerEmail || undefined,
@@ -87,15 +90,10 @@ export async function submitQrOrder(
       customerName: order.customerName,
       tableNumber: order.tableNumber,
       total: order.total,
-      paymentMethod: parsed.data.paymentMethod,
-    });
-    await notifyCashierApp({
-      cashierId: table.cashierId,
-      event: "new-qr-order",
-      orderId: order.id,
+      requestedPaymentMethod: preference.paymentMethod,
     });
 
-    return { ok: true, orderId: order.id, status };
+    return normalizeQrOrderResult({ checkoutToken, orderNumber: order.orderNumber, status: QR_ORDER_STATUS });
   } catch (e) {
     return {
       ok: false,

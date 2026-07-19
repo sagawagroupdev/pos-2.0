@@ -2,11 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { toast } from "sonner";
-import { Eye, ArrowRight2, Trash, Edit2 } from "iconsax-react";
-import type { DraftOrder, DraftStatus } from "./pos-terminal";
+import { Eye, ArrowRight2, Trash } from "iconsax-react";
+import type { DraftOrder } from "./pos-terminal";
 import { rupiah } from "@/lib/format";
-import { updateOrderStatus, discardDraft } from "./actions";
-import { HELD_STATUS_OPTIONS } from "@/lib/order-status";
+import { discardDraft } from "./actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -24,15 +23,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -88,14 +78,6 @@ export function DraftSheet({
     ? (drafts.find((d) => d.id === detail.id) ?? null)
     : null;
 
-  function handleStatusChange(id: string, status: DraftStatus) {
-    startTransition(async () => {
-      const res = await updateOrderStatus(id, status);
-      if (res.ok) toast.success("Status diperbarui");
-      else toast.error(res.error);
-    });
-  }
-
   function handleDelete(id: string) {
     startTransition(async () => {
       const res = await discardDraft(id);
@@ -114,7 +96,7 @@ export function DraftSheet({
           <SheetHeader>
             <SheetTitle>Pesanan Tertahan</SheetTitle>
             <SheetDescription>
-              Lanjutkan, ubah status, atau hapus pesanan tertahan.
+              Lanjutkan atau hapus pesanan tertahan.
             </SheetDescription>
           </SheetHeader>
           <ScrollArea className="flex-1">
@@ -291,36 +273,6 @@ export function DraftSheet({
                     <ArrowRight2 size={16} color="currentColor" />
                     Lanjutkan
                   </Button>
-
-                  <DropdownMenu>
-                    <DropdownMenuTrigger
-                      render={<Button variant="outline" />}
-                      disabled={pending}
-                    >
-                      <Edit2 size={16} color="currentColor" />
-                      Status
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuRadioGroup
-                        value={detailDraft.status}
-                        onValueChange={(v) =>
-                          v &&
-                          handleStatusChange(detailDraft.id, v as DraftStatus)
-                        }
-                      >
-                        <DropdownMenuLabel>Ubah Status</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        {HELD_STATUS_OPTIONS.map((opt) => (
-                          <DropdownMenuRadioItem
-                            key={opt.value}
-                            value={opt.value}
-                          >
-                            {opt.label}
-                          </DropdownMenuRadioItem>
-                        ))}
-                      </DropdownMenuRadioGroup>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
 
                   <Button
                     variant="destructive"

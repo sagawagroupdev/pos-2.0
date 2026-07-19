@@ -4,12 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Home2, Maximize2, Notification, Save2, MenuBoard } from "iconsax-react";
+import { Home2, Maximize2, Save2, MenuBoard, Notification, Printer } from "iconsax-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useCashier } from "./cashier-context";
 import { useDraftsUI } from "./drafts-ui-context";
+import { usePrinter } from "./printer-context";
+import { useQrOrderSheetUI } from "./qr-order-sheet-ui-context";
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -28,8 +30,10 @@ export function PosHeader({
 }) {
   const router = useRouter();
   const { cashierName, setCashierName } = useCashier();
+  const printer = usePrinter();
   const { enabled: draftsEnabled, count: draftCount, setOpen: setDraftsOpen } =
     useDraftsUI();
+  const { setOpen: setQrOrderSheetOpen } = useQrOrderSheetUI();
   const [draftName, setDraftName] = useState(cashierName);
   const [prevCashierName, setPrevCashierName] = useState(cashierName);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -131,10 +135,24 @@ export function PosHeader({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => router.push("/orders")}
-          aria-label="Notifikasi pesanan"
+          onClick={() => setQrOrderSheetOpen(true)}
+          aria-label="Pesanan QR masuk"
         >
           <Notification size={24} variant="Linear" color="currentColor" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label={printer.connected ? "Printer siap" : "Konek printer"}
+          onClick={printer.connected ? undefined : () => printer.connect()}
+          className="relative"
+        >
+          <Printer size={24} variant="Linear" color="currentColor" />
+          <span
+            className={`absolute -right-1 -top-0.5 size-2.5 rounded-full ring-2 ring-background ${
+              printer.connected ? "bg-emerald-500" : "bg-red-500"
+            }`}
+          />
         </Button>
         <Button
           variant="ghost"
@@ -142,11 +160,7 @@ export function PosHeader({
           onClick={toggleFullscreen}
           aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
         >
-          {isFullscreen ? (
-            <Maximize2 size={24} variant="Linear" color="currentColor" />
-          ) : (
-            <Maximize2 size={24} variant="Linear" color="currentColor" />
-          )}
+          <Maximize2 size={24} variant="Linear" color="currentColor" />
         </Button>
       </div>
     </header>

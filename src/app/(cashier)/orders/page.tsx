@@ -9,7 +9,7 @@ function toRow(o: {
   channel: "CASHIER" | "QR";
   type: "DINE_IN" | "TAKE_AWAY";
   status: OrderRow["status"];
-  paymentMethod: "CASH" | "CARD" | "QRIS";
+  paymentMethod: "CASH" | "CARD" | "QRIS" | null;
   cashierName: string | null;
   cashier: { name: string } | null;
   customerName: string | null;

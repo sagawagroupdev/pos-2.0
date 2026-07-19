@@ -138,7 +138,7 @@ export async function getTransactions(
     date: o.transactionDate.toISOString(),
     cashierName: o.cashier?.name ?? "—",
     channel: o.channel === "QR" ? "QR Table" : "Kasir",
-    paymentMethod: o.paymentMethod,
+    paymentMethod: o.paymentMethod ?? "—",
     total: o.total,
     itemCount: o.items.reduce((s, it) => s + it.quantity, 0),
   }));

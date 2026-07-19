@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, Wallet, ScanBarcode } from "iconsax-react";
+import { ArrowLeft } from "iconsax-react";
+import Image from "next/image";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -14,20 +15,17 @@ import type { PaymentMethod } from "./types";
 const paymentOptions: {
   value: PaymentMethod;
   label: string;
-  sublabel: string;
-  icon: typeof Wallet;
+  assetSrc: string;
 }[] = [
   {
     value: "CASH",
-    label: "Tunai (di Kasir)",
-    sublabel: "Bayar langsung di kasir",
-    icon: Wallet,
+    label: "Tunai",
+    assetSrc: "/assets/element/cash.svg",
   },
   {
     value: "QRIS",
     label: "QRIS",
-    sublabel: "Scan QRIS statis di kasir",
-    icon: ScanBarcode,
+    assetSrc: "/assets/element/qris.svg",
   },
 ];
 
@@ -79,7 +77,6 @@ export function CheckoutStep({
       </header>
 
       <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
-        {/* Scrollable content area — pb-36 to avoid floating bar overlap */}
         <div className="flex flex-col gap-5 overflow-auto p-4 pb-36">
 
           {/* Customer info section */}
@@ -152,59 +149,47 @@ export function CheckoutStep({
 
           {/* Payment method section */}
           <div className="flex flex-col gap-3">
-            <p className="text-sm font-semibold text-foreground">Metode Pembayaran</p>
+            <p className="text-sm font-semibold text-foreground">Preferensi pembayaran</p>
             <div className="grid grid-cols-2 gap-3">
               {paymentOptions.map((opt) => {
                 const selected = paymentMethod === opt.value;
-                const Icon = opt.icon;
                 return (
                   <RippleButton
                     key={opt.value}
                     type="button"
                     onClick={() => setPaymentMethod(opt.value)}
                     className={cn(
-                      "flex flex-col items-center gap-1.5 rounded-xl border-2 p-4 text-center transition-all",
+                      "flex min-h-20 items-center gap-3 rounded-xl border-2 p-3 text-left transition-all",
                       selected
-                        ? "border-primary bg-primary/5 ring-1 ring-primary"
+                        ? "border-green-500 ring-1 ring-green-500/30 hover:bg-emerald/10"
                         : "border-muted hover:border-muted-foreground/30"
                     )}
                   >
-                    <Icon
-                      size="28"
-                      color="currentColor"
-                      className={selected ? "text-primary" : "text-muted-foreground"}
-                    />
+                    <div
+                      className={cn(
+                        "flex h-12 w-16 shrink-0 items-center justify-center rounded-lg bg-muted/70 p-1.5 transition-colors",
+                        selected && "bg-green-500/10"
+                      )}
+                    >
+                      <Image
+                        src={opt.assetSrc}
+                        alt=""
+                        width={80}
+                        height={48}
+                        className="h-auto max-h-9 w-full object-contain"
+                      />
+                    </div>
                     <span
                       className={cn(
-                        "text-sm font-medium leading-tight",
-                        selected ? "text-primary" : "text-foreground"
+                        "text-left text-sm font-medium leading-tight",
+                        selected ? "text-green-600 dark:text-green-400" : "text-foreground"
                       )}
                     >
                       {opt.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground leading-tight">
-                      {opt.sublabel}
-                    </span>
                   </RippleButton>
                 );
               })}
-            </div>
-
-            {/* Contextual guidance banner */}
-            <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800 dark:border-amber-800/40 dark:bg-amber-950/30 dark:text-amber-300">
-              <svg
-                className="size-4 shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4M12 16h.01" />
-              </svg>
-              Setelah kirim pesanan, tunjukkan QR konfirmasi ke kasir untuk menyelesaikan pembayaran.
             </div>
           </div>
         </div>

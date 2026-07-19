@@ -1,13 +1,21 @@
-"use client";
+﻿"use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useReactToPrint } from "react-to-print";
+import Lottie from "lottie-react";
 import { toast } from "sonner";
-import { submitPosOrder, holdPosOrder } from "./actions";
+import {
+  submitPosOrder,
+  holdPosOrder,
+  releaseQrCheckoutAction,
+  settleQrCheckoutAction,
+} from "./actions";
 import { useCashier } from "./cashier-context";
 import { useDraftsUI } from "./drafts-ui-context";
+import { useQrOrderSheetUI } from "./qr-order-sheet-ui-context";
+import { usePrinter } from "./printer-context";
 import type { MenuCategory } from "@/lib/menu";
 import { SearchNormal1 } from "iconsax-react";
 import { Button } from "@/components/ui/button";
@@ -15,20 +23,47 @@ import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { DraftSheet } from "./draft-sheet";
-import { Receipt, type ReceiptData, type ReceiptStore } from "@/components/receipt";
+import { QrOrderSheet } from "./qr-order-sheet";
+import { QrOrderScannerDialog } from "./qr-order-scanner-dialog";
+import { listQrOrdersAction } from "./actions";
+import type { QrOrderListItem } from "./actions";
+import { buildReceipt } from "@/lib/escpos-receipt";
+import successAnimation from "../../../public/assets/lottie/Success.json";
 import {
   CartPanel,
   type CartItem,
   type OrderType,
   type PaymentMethod,
 } from "./cart-panel";
+import { Receipt58mm, type Receipt58mmData } from "@/components/receipt";
 import { rupiah } from "@/lib/format";
 
 export type DraftStatus =
-  | "DRAFT"
-  | "PENDING"
-  | "PENDING_PAYMENT"
-  | "WAITING_CONFIRMATION";
+  | "DRAFT";
+
+export type QrCheckoutSnapshot = {
+  id: string;
+  orderNumber: string;
+  customerName: string | null;
+  customerPhone: string | null;
+  customerEmail: string | null;
+  tableNumber: string | null;
+  type: OrderType;
+  requestedPaymentMethod: PaymentMethod | null;
+  note: string | null;
+  subtotal: number;
+  discount: number;
+  tax: number;
+  total: number;
+  items: {
+    id: string;
+    itemId: string;
+    name: string;
+    quantity: number;
+    price: number;
+    note: string | null;
+  }[];
+};
 
 export type DraftItem = {
   itemId: string;
@@ -67,18 +102,25 @@ export function PosTerminal({
   enableDraftOrders,
   drafts,
   resumeId,
+  qrCheckout,
+  checkoutLockToken,
+  checkoutError,
 }: {
   menu: MenuCategory[];
-  store: ReceiptStore;
+  store: Receipt58mmStore;
   taxRate: number;
   taxEnabled: boolean;
   enableDraftOrders: boolean;
   drafts: DraftOrder[];
   resumeId: string | null;
+  qrCheckout: QrCheckoutSnapshot | null;
+  checkoutLockToken: string | null;
+  checkoutError: string | null;
 }) {
   const router = useRouter();
   const { cashierName } = useCashier();
   const { open: draftsOpen, setOpen: setDraftsOpen } = useDraftsUI();
+  const printer = usePrinter();
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orderType, setOrderType] = useState<OrderType>("DINE_IN");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("CASH");
@@ -86,20 +128,58 @@ export function PosTerminal({
   const [paidAmount, setPaidAmount] = useState(0);
   const [customerName, setCustomerName] = useState("");
   const [note, setNote] = useState("");
+  const [tableNumber, setTableNumber] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
+  const [lastReceipt, setLastReceipt] = useState<Receipt58mmData | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [resumingDraftId, setResumingDraftId] = useState<string | null>(null);
   const [holding, setHolding] = useState(false);
-  const [resumedId, setResumedId] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [printing, setPrinting] = useState(false);
+  const [connectingPrinter, setConnectingPrinter] = useState(false);
+  const [releasingQrCheckout, startReleaseQrCheckout] = useTransition();
+  const { open: qrOrderSheetOpen, setOpen: setQrOrderSheetOpen } = useQrOrderSheetUI();
+  const [qrOrders, setQrOrders] = useState<QrOrderListItem[]>([]);
 
   // Auto-load a draft when arriving via /pos?resume=<id> (from Orders Dashboard).
-  if (resumeId && resumeId !== resumedId) {
-    setResumedId(resumeId);
+  const prevResumeId = useRef<string | null>(null);
+  useEffect(() => {
+    if (!resumeId || resumeId === prevResumeId.current) return;
+    prevResumeId.current = resumeId;
     const target = drafts.find((d) => d.id === resumeId);
     if (target) loadDraftIntoCart(target);
-  }
+  }, [resumeId, drafts]);
+
+  // Auto-load QR checkout items into cart when claimed.
+  useEffect(() => {
+    if (!qrCheckout) return;
+    setCart(
+      qrCheckout.items.map((it) => ({
+        itemId: it.itemId,
+        name: it.name,
+        price: it.price,
+        stock: Number.MAX_SAFE_INTEGER,
+        quantity: it.quantity,
+        note: it.note ?? "",
+        image: null,
+      }))
+    );
+    if (qrCheckout.customerName) setCustomerName(qrCheckout.customerName);
+    if (qrCheckout.note) setNote(qrCheckout.note);
+    if (qrCheckout.tableNumber) setTableNumber(qrCheckout.tableNumber);
+    setOrderType(qrCheckout.type);
+    if (qrCheckout.requestedPaymentMethod) setPaymentMethod(qrCheckout.requestedPaymentMethod);
+  }, [qrCheckout, checkoutLockToken]);
+
+  // Fetch QR orders when sheet opens
+  useEffect(() => {
+    if (qrOrderSheetOpen) {
+      listQrOrdersAction().then((res) => {
+        if (res.ok) setQrOrders(res.orders);
+      });
+    }
+  }, [qrOrderSheetOpen]);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef: receiptRef });
@@ -166,6 +246,12 @@ export function PosTerminal({
     });
   }
 
+  function setItemNote(itemId: string, note: string) {
+    setCart((prev) =>
+      prev.map((c) => (c.itemId === itemId ? { ...c, note } : c))
+    );
+  }
+
   function changeQty(itemId: string, delta: number) {
     setCart((prev) =>
       prev.flatMap((c) => {
@@ -186,6 +272,7 @@ export function PosTerminal({
     setDiscountPercent(0);
     setPaidAmount(0);
     setCustomerName("");
+    setTableNumber("");
     setNote("");
     setOrderType("DINE_IN");
     setPaymentMethod("CASH");
@@ -253,6 +340,58 @@ export function PosTerminal({
     setDraftsOpen(false);
   }
 
+  function handleReleaseQrCheckout() {
+    if (!checkoutLockToken || releasingQrCheckout) return;
+    startReleaseQrCheckout(async () => {
+      const result = await releaseQrCheckoutAction(checkoutLockToken);
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
+      toast.success("Checkout QR dilepas");
+      router.replace("/pos");
+    });
+  }
+
+  // Print receipt via BLE — fire & forget, never blocks the submit flow
+  function printToBle(data: Receipt58mmData) {
+    if (!printer.connected) return;
+    setPrinting(true);
+    const bytes = buildReceipt(data, store);
+    printer.print(bytes)
+      .catch(() => {}) // silent fail — printing is best-effort
+      .finally(() => setPrinting(false));
+  }
+
+  function buildReceiptData(
+    id: string,
+    orderNumber: string,
+    paid: number,
+  ): Receipt58mmData {
+    return {
+      id,
+      orderNumber,
+      transactionDate: new Date().toISOString(),
+      cashierName,
+      customerName: customerName || null,
+      tableNumber: tableNumber || qrCheckout?.tableNumber || null,
+      type: orderType,
+      paymentMethod,
+      note: note || null,
+      items: cart.map((c) => ({
+        name: c.name,
+        quantity: c.quantity,
+        price: c.price,
+      })),
+      subtotal,
+      discount: discountAmount,
+      tax,
+      total,
+      paidAmount: paid,
+      changeAmount: paymentMethod === "CASH" ? Math.max(0, paid - total) : 0,
+    };
+  }
+
   function handleSubmit() {
     if (!cart.length) {
       toast.error("Keranjang kosong");
@@ -270,7 +409,54 @@ export function PosTerminal({
       toast.error("Jumlah bayar kurang");
       return;
     }
+
     setSubmitting(true);
+
+    const paid = paymentMethod === "CASH" ? paidAmount : total;
+
+    function onSuccess(id: string, orderNumber: string) {
+      const receipt = buildReceiptData(id, orderNumber, paid);
+      setLastReceipt(receipt);
+      setShowSuccess(true);
+      setSubmitting(false);
+      reset();
+
+      // Print is fire-and-forget — doesn't block reset() or cause stuck state
+      printToBle(receipt);
+    }
+
+    function onError(msg: string) {
+      setSubmitting(false);
+      toast.error(msg);
+    }
+
+    if (checkoutLockToken) {
+      settleQrCheckoutAction({
+        checkoutLockToken,
+        lines: cart.map((c) => ({
+          itemId: c.itemId,
+          quantity: c.quantity,
+          note: c.note || undefined,
+        })),
+        type: orderType,
+        paymentMethod,
+        paidAmount: paid,
+        customerName: customerName || undefined,
+        cashierName: cashierName,
+        note: note || undefined,
+        discount: discountAmount,
+      })
+        .then((res) => {
+          if (!res.ok) { onError(res.error); return; }
+          onSuccess(res.orderId, res.orderNumber);
+          setTimeout(() => router.replace("/pos"), 2000);
+        })
+        .catch(() => {
+          onError("Gagal memproses pembayaran");
+        });
+      return;
+    }
+
     submitPosOrder({
       lines: cart.map((c) => ({
         itemId: c.itemId,
@@ -280,48 +466,50 @@ export function PosTerminal({
       type: orderType,
       paymentMethod,
       discount: discountAmount,
-      paidAmount: paymentMethod === "CASH" ? paidAmount : total,
+      paidAmount: paid,
       customerName: customerName || undefined,
       cashierName: cashierName || undefined,
       note: note || undefined,
       resumingDraftId: resumingDraftId || undefined,
-    }).then((res) => {
-      setSubmitting(false);
-      if (!res.ok) {
-        toast.error(res.error);
-        return;
-      }
-      const paid = paymentMethod === "CASH" ? paidAmount : total;
-      setLastReceipt({
-        id: res.orderId,
-        orderNumber: res.orderNumber,
-        transactionDate: new Date().toISOString(),
-        cashierName,
-        customerName: customerName || null,
-        tableNumber: null,
-        type: orderType,
-        paymentMethod,
-        note: note || null,
-        items: cart.map((c) => ({
-          name: c.name,
-          quantity: c.quantity,
-          price: c.price,
-        })),
-        subtotal,
-        discount: discountAmount,
-        tax,
-        total,
-        paidAmount: paid,
-        changeAmount: paymentMethod === "CASH" ? Math.max(0, paid - total) : 0,
+    })
+      .then((res) => {
+        if (!res.ok) { onError(res.error); return; }
+        onSuccess(res.orderId, res.orderNumber);
+        router.refresh();
+      })
+      .catch(() => {
+        onError("Gagal memproses pesanan");
       });
-      toast.success("Transaksi berhasil");
-      reset();
-    });
   }
 
   return (
     <div className="flex flex-1 overflow-hidden">
       <div className="flex flex-1 flex-col overflow-hidden">
+        {checkoutError && (
+          <div className="border-b border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+            {checkoutError}
+          </div>
+        )}
+        {qrCheckout && checkoutLockToken && (
+          <div className="flex items-center justify-between gap-3 border-b bg-primary/5 px-3 py-2 text-sm">
+            <div className="min-w-0">
+              <p className="font-semibold">QR Table checkout</p>
+              <p className="truncate text-xs text-muted-foreground">
+                {qrCheckout.orderNumber}
+                {qrCheckout.customerName ? ` · ${qrCheckout.customerName}` : ""}
+                {qrCheckout.tableNumber ? ` · Meja ${qrCheckout.tableNumber}` : ""}
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={releasingQrCheckout}
+              onClick={handleReleaseQrCheckout}
+            >
+              {releasingQrCheckout ? "Melepas..." : "Lepas kunci"}
+            </Button>
+          </div>
+        )}
         {menu.length === 0 ? (
           <p className="p-4 text-muted-foreground">
             Belum ada menu. Tambahkan item di halaman Menu.
@@ -329,6 +517,7 @@ export function PosTerminal({
         ) : (
           <div className="flex flex-1 flex-col overflow-hidden">
             <div className="flex items-center gap-3 border-b px-3 py-2">
+              <QrOrderScannerDialog />
               <ScrollArea className="flex-1">
                 <ButtonGroup>
                   <Button
@@ -417,6 +606,8 @@ export function PosTerminal({
         itemCount={itemCount}
         customerName={customerName}
         onCustomerNameChange={setCustomerName}
+        tableNumber={tableNumber}
+        onTableNumberChange={setTableNumber}
         orderType={orderType}
         onOrderTypeChange={setOrderType}
         note={note}
@@ -440,10 +631,32 @@ export function PosTerminal({
         holding={holding}
         resumingDraftId={resumingDraftId}
         onChangeQty={changeQty}
+        onSetNote={setItemNote}
         onClear={reset}
         onSubmit={handleSubmit}
         onHold={handleHold}
-        onPrintLast={() => handlePrint()}
+        onPrintLast={async () => {
+          if (!lastReceipt) return;
+          if (printer.connected) {
+            setPrinting(true);
+            try {
+              const data = buildReceipt(lastReceipt, store);
+              await printer.print(data);
+              toast.success("Struk terkirim ke printer");
+            } catch {
+              toast.error("Gagal mencetak struk");
+            }
+            setPrinting(false);
+          } else {
+            handlePrint();
+          }
+        }}
+      />
+
+      <QrOrderSheet
+        open={qrOrderSheetOpen}
+        onOpenChange={setQrOrderSheetOpen}
+        orders={qrOrders}
       />
 
       {enableDraftOrders && (
@@ -457,9 +670,76 @@ export function PosTerminal({
 
       <div className="hidden">
         {lastReceipt && (
-          <Receipt ref={receiptRef} data={lastReceipt} store={store} />
+          <Receipt58mm ref={receiptRef} data={lastReceipt} store={store} />
         )}
       </div>
+
+      {/* Success overlay with Lottie animation */}
+      {showSuccess && lastReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="mx-4 flex w-full max-w-sm flex-col items-center gap-4 rounded-2xl bg-background p-8 text-center shadow-2xl">
+            <Lottie
+              animationData={successAnimation}
+              loop={false}
+              className="size-28"
+            />
+            <div>
+              <h2 className="text-xl font-bold">Transaksi Berhasil!</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {lastReceipt.orderNumber}
+              </p>
+              <p className="mt-0.5 text-lg font-semibold text-primary">
+                {rupiah(lastReceipt.total)}
+              </p>
+            </div>
+            {printing && (
+              <p className="text-xs text-muted-foreground">Mencetak struk...</p>
+            )}
+            {printer.connected && !printing && (
+              <p className="text-xs text-emerald-600">Struk terkirim ke printer</p>
+            )}
+            {!printer.connected && (
+              <p className="text-xs text-muted-foreground">
+                Printer belum terhubung
+              </p>
+            )}
+            <div className="flex gap-3">
+              <Button onClick={() => setShowSuccess(false)} size="sm">
+                Tutup
+              </Button>
+              {!printer.connected && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={connectingPrinter}
+                  onClick={async () => {
+                    setConnectingPrinter(true);
+                    try {
+                      if (lastReceipt) {
+                        setPrinting(true);
+                        const data = buildReceipt(lastReceipt, store);
+                        const printed = await printer.connectAndPrint(data);
+                        if (printed) toast.success("Struk terkirim ke printer");
+                      }
+                    } catch (err) {
+                      toast.error(
+                        err instanceof Error ? err.message : "Gagal mencetak struk"
+                      );
+                    } finally {
+                      setPrinting(false);
+                      setConnectingPrinter(false);
+                    }
+                  }}
+                >
+                  {connectingPrinter ? "Menghubungkan..." : "Connect Printer"}
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
+

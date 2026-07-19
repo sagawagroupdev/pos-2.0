@@ -1,12 +1,11 @@
-"use client";
+﻿"use client";
 
 import Image from "next/image";
-import { Trash, Profile, Reserve, Bag2, Card, Box } from "iconsax-react";
+import { Trash, Profile, Reserve, Bag2, Box, Monitor } from "iconsax-react";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { rupiah } from "@/lib/format";
 
@@ -31,6 +30,8 @@ type CartPanelProps = {
   itemCount: number;
   customerName: string;
   onCustomerNameChange: (v: string) => void;
+  tableNumber: string;
+  onTableNumberChange: (v: string) => void;
   orderType: OrderType;
   onOrderTypeChange: (v: OrderType) => void;
   note: string;
@@ -54,6 +55,7 @@ type CartPanelProps = {
   holding: boolean;
   resumingDraftId: string | null;
   onChangeQty: (itemId: string, delta: number) => void;
+  onSetNote: (itemId: string, note: string) => void;
   onClear: () => void;
   onSubmit: () => void;
   onHold: () => void;
@@ -71,6 +73,8 @@ export function CartPanel({
   itemCount,
   customerName,
   onCustomerNameChange,
+  tableNumber,
+  onTableNumberChange,
   orderType,
   onOrderTypeChange,
   note,
@@ -94,6 +98,7 @@ export function CartPanel({
   holding,
   resumingDraftId,
   onChangeQty,
+  onSetNote,
   onClear,
   onSubmit,
   onHold,
@@ -102,7 +107,7 @@ export function CartPanel({
   const hasItems = items.length > 0;
 
   return (
-    <aside className="flex w-80 shrink-0 flex-col border-l">
+    <aside className="relative flex w-80 shrink-0 flex-col border-l">
       <header className="flex items-center justify-between px-3 py-2.5">
         <h2 className="text-base font-semibold">Keranjang</h2>
         <div className="flex items-center gap-2">
@@ -122,241 +127,273 @@ export function CartPanel({
         </div>
       </header>
 
-      <ScrollArea className="flex-1">
-        <div className="flex flex-col gap-2 px-2 pb-2">
-          <div className="relative">
-            <Profile
-              size={16}
-              color="currentColor"
-              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-            />
-            <Input
-              value={customerName}
-              onChange={(e) => onCustomerNameChange(e.target.value)}
-              placeholder="Nama pelanggan..."
-              className={cn(filledInput, "h-9 rounded-lg pl-8")}
-            />
-          </div>
+      <div className="flex-1 overflow-y-auto pb-57.5">
+          <div className="flex flex-col gap-2 px-2 pb-2">
+            <div className="relative">
+              <Profile
+                size={16}
+                color="currentColor"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={customerName}
+                onChange={(e) => onCustomerNameChange(e.target.value)}
+                placeholder="Nama pelanggan..."
+                className={cn(filledInput, "h-9 rounded-lg pl-8")}
+              />
+            </div>
 
-          {hasItems ? (
-            <div className="flex flex-col gap-1.5">
-              {items.map((item) => (
-                <div
-                  key={item.itemId}
-                  className="flex items-center gap-2.5 rounded-lg bg-muted/60 p-2"
-                >
-                  <div className="relative size-9 shrink-0 overflow-hidden rounded-md bg-background">
-                    {item.image ? (
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        sizes="36px"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <span className="flex size-full items-center justify-center text-muted-foreground">
-                        <Box size={16} color="currentColor" />
-                      </span>
-                    )}
+            <div className="relative">
+              <Monitor
+                size={16}
+                color="currentColor"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+              />
+              <Input
+                value={tableNumber}
+                onChange={(e) => onTableNumberChange(e.target.value)}
+                placeholder="No. Meja..."
+                className={cn(filledInput, "h-9 rounded-lg pl-8")}
+              />
+            </div>
+
+            {hasItems ? (
+              <div className="flex flex-col gap-1.5">
+                {items.map((item) => (
+                  <div
+                    key={item.itemId}
+                    className="flex flex-col gap-1.5 rounded-lg bg-muted/60 p-2"
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className="relative size-9 shrink-0 overflow-hidden rounded-md bg-background">
+                        {item.image ? (
+                          <Image
+                            src={item.image}
+                            alt={item.name}
+                            fill
+                            sizes="36px"
+                            className="object-cover"
+                          />
+                        ) : (
+                          <span className="flex size-full items-center justify-center text-muted-foreground">
+                            <Box size={16} color="currentColor" />
+                          </span>
+                        )}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium leading-tight">
+                          {item.name}
+                        </p>
+                        <p className="text-xs font-medium text-primary">
+                          {rupiah(item.price)}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          size="icon-xs"
+                          variant="outline"
+                          onClick={() => onChangeQty(item.itemId, -1)}
+                          aria-label="Kurangi"
+                        >
+                          −
+                        </Button>
+                        <span className="w-4 text-center text-sm font-medium">
+                          {item.quantity}
+                        </span>
+                        <Button
+                          size="icon-xs"
+                          variant="outline"
+                          onClick={() => onChangeQty(item.itemId, 1)}
+                          aria-label="Tambah"
+                        >
+                          +
+                        </Button>
+                      </div>
+                    </div>
+                    <Input
+                      value={item.note}
+                      onChange={(e) => onSetNote(item.itemId, e.target.value)}
+                      placeholder="Catatan item (opsional)"
+                      className="h-7 rounded-md text-xs"
+                    />
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium leading-tight">
-                      {item.name}
-                    </p>
-                    <p className="text-xs font-medium text-primary">
-                      {rupiah(item.price)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="icon-xs"
-                      variant="outline"
-                      onClick={() => onChangeQty(item.itemId, -1)}
-                      aria-label="Kurangi"
-                    >
-                      −
-                    </Button>
-                    <span className="w-4 text-center text-sm font-medium">
-                      {item.quantity}
-                    </span>
-                    <Button
-                      size="icon-xs"
-                      variant="outline"
-                      onClick={() => onChangeQty(item.itemId, 1)}
-                      aria-label="Tambah"
-                    >
-                      +
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="py-6 text-center text-sm text-muted-foreground">
-              Keranjang kosong
-            </p>
-          )}
-
-          <div className="mt-0.5 flex flex-col gap-1.5">
-            <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-              Tipe Pesanan
-            </span>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => onOrderTypeChange("DINE_IN")}
-                className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
-                  orderType === "DINE_IN"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-muted/40 hover:bg-muted"
-                )}
-              >
-                <Reserve size={16} color="currentColor" />
-                Dine In
-              </button>
-              <button
-                type="button"
-                onClick={() => onOrderTypeChange("TAKE_AWAY")}
-                className={cn(
-                  "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
-                  orderType === "TAKE_AWAY"
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-muted/40 hover:bg-muted"
-                )}
-              >
-                <Bag2 size={16} color="currentColor" />
-                Take Away
-              </button>
-            </div>
-          </div>
-
-          <Textarea
-            value={note}
-            onChange={(e) => onNoteChange(e.target.value)}
-            placeholder="Catatan pesanan..."
-            rows={1}
-            className={cn(filledInput, "rounded-lg")}
-          />
-          <div className="relative">
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={discountPercent || ""}
-              onChange={(e) =>
-                onDiscountPercentChange(
-                  Math.min(100, Math.max(0, Number(e.target.value) || 0))
-                )
-              }
-              placeholder="Diskon (%)"
-              className={cn(filledInput, "no-spinner h-9 rounded-lg")}
-            />
-          </div>
-        </div>
-      </ScrollArea>
-
-      <div className="flex flex-col gap-2.5 border-t px-3 py-2.5">
-        <div className="flex flex-col gap-1 text-sm">
-          <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
-            <span>{rupiah(subtotal)}</span>
-          </div>
-          {discountAmount > 0 && (
-            <div className="flex justify-between text-muted-foreground">
-              <span>Diskon ({discountPercent}%)</span>
-              <span>-{rupiah(discountAmount)}</span>
-            </div>
-          )}
-          {taxEnabled && (
-            <div className="flex justify-between text-muted-foreground">
-              <span>PPN {taxRate}%</span>
-              <span>{rupiah(tax)}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center justify-between border-t pt-2.5">
-          <span className="text-base font-semibold">Total</span>
-          <span className="text-base font-bold text-primary">
-            {rupiah(total)}
-          </span>
-        </div>
-
-        {paymentMethod === "CASH" && (
-          <div className="relative">
-            <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
-              Rp
-            </span>
-            <Input
-              type="text"
-              inputMode="numeric"
-              value={paidAmount ? paidAmount.toLocaleString("id-ID") : ""}
-              onChange={(e) =>
-                onPaidAmountChange(Number(e.target.value.replace(/\D/g, "")) || 0)
-              }
-              placeholder="Jumlah bayar"
-              className={cn(filledInput, "h-9 rounded-lg pl-8")}
-            />
-            {paidAmount > 0 && (
-              <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
-                Kembali {rupiah(change)}
-              </span>
+                ))}
+              </div>
+            ) : (
+              <p className="py-6 text-center text-sm text-muted-foreground">
+                Keranjang kosong
+              </p>
             )}
+
+            <div className="mt-0.5 flex flex-col gap-1.5">
+              <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                Tipe Pesanan
+              </span>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => onOrderTypeChange("DINE_IN")}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
+                    orderType === "DINE_IN"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/40 hover:bg-muted"
+                  )}
+                >
+                  <Reserve size={16} color="currentColor" />
+                  Dine In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onOrderTypeChange("TAKE_AWAY")}
+                  className={cn(
+                    "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
+                    orderType === "TAKE_AWAY"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-muted/40 hover:bg-muted"
+                  )}
+                >
+                  <Bag2 size={16} color="currentColor" />
+                  Take Away
+                </button>
+              </div>
+            </div>
+
+            <Textarea
+              value={note}
+              onChange={(e) => onNoteChange(e.target.value)}
+              placeholder="Catatan pesanan..."
+              rows={1}
+              className={cn(filledInput, "rounded-lg")}
+            />
+            <div className="relative">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                value={discountPercent || ""}
+                onChange={(e) =>
+                  onDiscountPercentChange(
+                    Math.min(100, Math.max(0, Number(e.target.value) || 0))
+                  )
+                }
+                placeholder="Diskon (%)"
+                className={cn(filledInput, "no-spinner h-9 rounded-lg")}
+              />
+            </div>
           </div>
-        )}
 
-        <ButtonGroup className="w-full">
-          {PAYMENT_METHODS.map((m) => (
-            <Button
-              key={m.value}
-              type="button"
-              variant={paymentMethod === m.value ? "default" : "outline"}
-              onClick={() => onPaymentMethodChange(m.value)}
-              className="h-9 flex-1"
-            >
-              {m.label}
-            </Button>
-          ))}
-        </ButtonGroup>
-
-        <div className="flex gap-2">
-          {enableDraftOrders && (
-            <Button
-              variant="outline"
-              onClick={onHold}
-              disabled={holding || !hasItems}
-              className="h-11 flex-1 rounded-lg text-sm"
-            >
-              {holding
-                ? "Menahan..."
-                : resumingDraftId
-                  ? "Perbarui Draft"
-                  : "Tahan"}
-            </Button>
-          )}
-
-          <Button
-            onClick={onSubmit}
-            disabled={submitting || !hasItems}
-            className="h-11 flex-1 rounded-lg text-sm"
+          <form
+            onSubmit={(e) => { e.preventDefault(); onSubmit(); }}
+            className="border-t bg-background px-3 py-2.5"
           >
-            <Card size={18} color="currentColor" />
-            {submitting ? "Memproses..." : `Bayar · ${rupiah(total)}`}
-          </Button>
+            <input type="hidden" name="paidAmount" value={paidAmount} />
+            <input type="hidden" name="paymentMethod" value={paymentMethod} />
+            <input type="hidden" name="discountPercent" value={discountPercent} />
+            <div className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-1 text-sm">
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Subtotal</span>
+                  <span>{rupiah(subtotal)}</span>
+                </div>
+                {discountAmount > 0 && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>Diskon ({discountPercent}%)</span>
+                    <span>-{rupiah(discountAmount)}</span>
+                  </div>
+                )}
+                {taxEnabled && (
+                  <div className="flex justify-between text-muted-foreground">
+                    <span>PB1 {taxRate}%</span>
+                    <span>{rupiah(tax)}</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex items-center justify-between border-t pt-2.5">
+                <span className="text-base font-semibold">Total</span>
+                <span className="text-base font-bold text-primary">
+                  {rupiah(total)}
+                </span>
+              </div>
+
+              {paymentMethod === "CASH" && (
+                <div className="relative">
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
+                    Rp
+                  </span>
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={paidAmount ? paidAmount.toLocaleString("id-ID") : ""}
+                    onChange={(e) =>
+                      onPaidAmountChange(Number(e.target.value.replace(/\D/g, "")) || 0)
+                    }
+                    placeholder="Jumlah bayar"
+                    name="paidAmountDisplay"
+                    className={cn(filledInput, "h-9 rounded-lg pl-8")}
+                  />
+                  {paidAmount > 0 && (
+                    <span className="absolute right-2.5 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">
+                      Kembali {rupiah(change)}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              <ButtonGroup className="w-full">
+                {PAYMENT_METHODS.map((m) => (
+                  <Button
+                    key={m.value}
+                    type="button"
+                    variant={paymentMethod === m.value ? "default" : "outline"}
+                    onClick={() => onPaymentMethodChange(m.value)}
+                    className="h-9 flex-1"
+                  >
+                    {m.label}
+                  </Button>
+                ))}
+              </ButtonGroup>
+
+              <div className="flex gap-2">
+                {enableDraftOrders && (
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={onHold}
+                    disabled={holding || !hasItems}
+                    className="h-11 flex-1 rounded-lg text-sm"
+                  >
+                    {holding
+                      ? "Menahan..."
+                      : resumingDraftId
+                        ? "Perbarui Draft"
+                        : "Tahan"}
+                  </Button>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={submitting || !hasItems}
+                  className="h-11 flex-1 rounded-lg text-sm"
+                >
+                  {submitting ? "Memproses..." : `Bayar ${rupiah(total)}`}
+                </Button>
+              </div>
+
+              {canPrintLast && (
+                <Button
+                  variant="outline"
+                  type="button"
+                  onClick={onPrintLast}
+                  className="h-9 w-full rounded-lg"
+                >
+                  Cetak Struk Terakhir
+                </Button>
+              )}
+            </div>
+          </form>
         </div>
-
-        {canPrintLast && (
-          <Button
-            variant="outline"
-            onClick={onPrintLast}
-            className="h-9 w-full rounded-lg"
-          >
-            Cetak Struk Terakhir
-          </Button>
-        )}
-      </div>
     </aside>
   );
 }

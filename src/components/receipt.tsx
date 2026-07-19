@@ -1,8 +1,18 @@
-"use client";
+﻿"use client";
 
 import { forwardRef } from "react";
 
-export type ReceiptData = {
+/* â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+export type ReceiptItem = {
+  name: string;
+  quantity: number;
+  price: number;
+  /** Per-item note / add-on annotation (rendered smaller below name). */
+  itemNote?: string | null;
+};
+
+export type Receipt58mmData = {
   id: string;
   orderNumber: string;
   transactionDate: string;
@@ -12,140 +22,265 @@ export type ReceiptData = {
   type: "DINE_IN" | "TAKE_AWAY";
   paymentMethod: "CASH" | "CARD" | "QRIS";
   note: string | null;
-  items: { name: string; quantity: number; price: number }[];
+  items: ReceiptItem[];
+
   subtotal: number;
   discount: number;
   tax: number;
+  /** Optional â€” defaults to 0. */
+  serviceCharge?: number;
+  /** Optional â€” defaults to 0. */
+  additionalFee?: number;
   total: number;
+
   paidAmount: number;
   changeAmount: number;
 };
 
-export type ReceiptStore = {
+export type Receipt58mmStore = {
   storeName: string;
   address: string | null;
   phone: string | null;
-  receiptFooter: string | null;
+  /** Shown in the footer. Defaults to "Terima Kasih". */
+  receiptFooter?: string | null;
 };
+
+export type Receipt58mmConfig = {
+  /** Whether the component headers are shown (e.g. "Outlet", "Pesanan"). */
+  showHeaders?: boolean;
+};
+
+export type Receipt58mmProps = {
+  data: Receipt58mmData;
+  store: Receipt58mmStore;
+  config?: Receipt58mmConfig;
+};
+
+/* â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const fmt = (n: number) => new Intl.NumberFormat("id-ID").format(n);
 
-const typeLabel = { DINE_IN: "Dine In", TAKE_AWAY: "Take Away" };
-const payLabel = { CASH: "Tunai", CARD: "Kartu", QRIS: "QRIS" };
+const typeLabel = { DINE_IN: "Dine In", TAKE_AWAY: "Take Away" } as const;
+const payLabel = {
+  CASH: "Cash",
+  CARD: "Card",
+  QRIS: "QRIS",
+} as const;
 
-export const Receipt = forwardRef<
-  HTMLDivElement,
-  { data: ReceiptData; store: ReceiptStore }
->(function Receipt({ data, store }, ref) {
-  const date = new Date(data.transactionDate);
-  const dateStr = `${date.toLocaleDateString("id-ID")} ${date.toLocaleTimeString(
-    "id-ID",
-    { hour: "2-digit", minute: "2-digit" }
-  )}`;
+/* â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-  return (
-    <div ref={ref} className="receipt">
-      <div className="center bold">{store.storeName}</div>
-      {store.address && <div className="center">{store.address}</div>}
-      {store.phone && <div className="center">No. Telp: {store.phone}</div>}
-      <div className="sep">================================</div>
-      <div>Tgl: {dateStr}</div>
-      <div>ID : {data.orderNumber}</div>
-      {data.cashierName && <div>Kasir: {data.cashierName}</div>}
-      {data.customerName && (
-        <div>
-          Pelanggan: {data.customerName}
-          {data.tableNumber ? ` (Meja ${data.tableNumber})` : ""}
+export const Receipt58mm = forwardRef<HTMLDivElement, Receipt58mmProps>(
+  function Receipt58mm({ data, store, config }, ref) {
+    const showHeaders = config?.showHeaders ?? false;
+
+    const date = new Date(data.transactionDate);
+    const dateStr = `${date.toLocaleDateString("id-ID")} ${date.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`;
+
+    const sc = data.serviceCharge ?? 0;
+    const extra = data.additionalFee ?? 0;
+
+    const isCash = data.paymentMethod === "CASH";
+
+    return (
+      <div ref={ref} className="receipt-58mm">
+        {/* â”€â”€ 1. Header Outlet â”€â”€ */}
+        <div className="center bold">{store.storeName}</div>
+        {store.address && <div className="center">{store.address}</div>}
+        {store.phone && <div className="center">{store.phone}</div>}
+
+        <div className="gap-4" />
+
+        {/* 2. Info Transaksi*/}
+        <div className="info">
+          <div>ID  : {data.orderNumber}</div>
+          <div>Date : {dateStr}</div>
+          {data.cashierName && <div>Cashier  : {data.cashierName}</div>}
+          {data.customerName && <div>Customer : {data.customerName}</div>}
+          {data.tableNumber && <div>Table : {data.tableNumber}</div>}
+          <div>Type: {typeLabel[data.type]}</div>
         </div>
-      )}
-      <div>Tipe: {typeLabel[data.type]}</div>
-      {data.note && <div>Catatan: {data.note}</div>}
-      <div className="dash">--------------------------------</div>
-      <div className="row">
-        <span>Item</span>
-        <span>Total</span>
-      </div>
-      <div className="dash">--------------------------------</div>
-      {data.items.map((item, i) => (
-        <div key={i} className="item">
-          <div>{item.name}</div>
-          <div className="row">
-            <span>
-              {item.quantity} x {fmt(item.price)}
-            </span>
-            <span>{fmt(item.price * item.quantity)}</span>
+
+        {/* 3. Daftar Pesanan */}
+        <div className="dashed" />
+        <div className="row bold">
+          <span>Item</span>
+          <span>Total</span>
+        </div>
+        <div className="dashed" />
+
+        {data.items.map((item, i) => (
+          <div key={i}>
+            <div className="item-name">{item.name}</div>
+            {item.itemNote && <div className="item-note">{item.itemNote}</div>}
+            <div className="row">
+              <span className="qty-label">
+                {item.quantity}x {fmt(item.price)}
+              </span>
+              <span>{fmt(item.price * item.quantity)}</span>
+            </div>
           </div>
-        </div>
-      ))}
-      <div className="dash">--------------------------------</div>
-      <div className="row">
-        <span>Subtotal</span>
-        <span>{fmt(data.subtotal)}</span>
-      </div>
-      {data.discount > 0 && (
-        <div className="row">
-          <span>Diskon</span>
-          <span>-{fmt(data.discount)}</span>
-        </div>
-      )}
-      {data.tax > 0 && (
-        <div className="row">
-          <span>PB1</span>
-          <span>{fmt(data.tax)}</span>
-        </div>
-      )}
-      <div className="row bold">
-        <span>TOTAL</span>
-        <span>{fmt(data.total)}</span>
-      </div>
-      <div className="dash">--------------------------------</div>
-      <div className="row">
-        <span>Bayar</span>
-        <span>{fmt(data.paidAmount)}</span>
-      </div>
-      <div className="row">
-        <span>Kembali</span>
-        <span>{fmt(data.changeAmount)}</span>
-      </div>
-      <div className="dash">--------------------------------</div>
-      <div>Metode Bayar: {payLabel[data.paymentMethod]}</div>
-      <div className="center" style={{ marginTop: "8px" }}>
-        {store.receiptFooter ?? "Terima Kasih"}
-      </div>
-      <div className="sep">================================</div>
+        ))}
 
-      <style jsx>{`
-        .receipt {
-          width: 100%;
-          font-family: "Courier New", monospace;
-          font-size: 12px;
-          line-height: 1.4;
-          color: #000;
-        }
-        .center {
-          text-align: center;
-        }
-        .bold {
-          font-weight: bold;
-        }
-        .row {
-          display: flex;
-          justify-content: space-between;
-        }
-        .item {
-          margin: 2px 0;
-        }
-        .sep,
-        .dash {
-          white-space: nowrap;
-          overflow: hidden;
-        }
-        @media print {
-          .receipt {
-            width: 48mm;
+        {/* 4. Catatan */}
+        <div className="dashed" />
+        <div className="bold">Notes:</div>
+        {data.note ? (
+          <div className="note-content">{data.note}</div>
+        ) : null}
+
+        {/*  5. Ringkasan Pembayaran  */}
+        <div className="dashed" />
+        <div className="row">
+          <span>Subtotal</span>
+          <span>{fmt(data.subtotal)}</span>
+        </div>
+        {data.discount > 0 && (
+          <div className="row">
+            <span>Discount</span>
+            <span>-{fmt(data.discount)}</span>
+          </div>
+        )}
+        {data.tax > 0 && (
+          <div className="row">
+            <span>PB1</span>
+            <span>{fmt(data.tax)}</span>
+          </div>
+        )}
+        {sc > 0 && (
+          <div className="row">
+            <span>Service Charge</span>
+            <span>{fmt(sc)}</span>
+          </div>
+        )}
+        {extra > 0 && (
+          <div className="row">
+            <span>Additional Fee</span>
+            <span>{fmt(extra)}</span>
+          </div>
+        )}
+        <div className="dashed" />
+        <div className="row total">
+          <span>Total</span>
+          <span>{fmt(data.total)}</span>
+        </div>
+        <div className="dashed" />
+
+        {/*  7. Informasi Pembayaran */}
+        <div className="row">
+          <span>Paid</span>
+          <span>{fmt(data.paidAmount)}</span>
+        </div>
+        <div className="row">
+          <span>Payment</span>
+          <span>{payLabel[data.paymentMethod]}</span>
+        </div>
+        {isCash && (
+          <div className="row">
+            <span>Change</span>
+            <span>{fmt(data.changeAmount)}</span>
+          </div>
+        )}
+
+        {/* â”€â”€ 8. Footer â”€â”€ */}
+        <div className="center footer">
+          {store.receiptFooter ?? "Thank You"}
+        </div>
+
+        {/* Spacer agar tidak terpotong saat cetak */}
+        <div className="print-spacer" />
+
+        <style jsx>{`
+          .receipt-58mm {
+            width: 100%;
+            max-width: 58mm;
+            font-family: "Courier New", Courier, monospace;
+            font-size: 11px;
+            line-height: 1.4;
+            color: #000;
+            background: #fff;
+            box-sizing: border-box;
+            padding: 0;
+            margin: 0;
           }
-        }
-      `}</style>
-    </div>
-  );
-});
+          .center {
+            text-align: center;
+          }
+          .bold {
+            font-weight: bold;
+          }
+          .row {
+            display: flex;
+            justify-content: space-between;
+          }
+          .total {
+            font-weight: bold;
+            font-size: 13px;
+          }
+          .total span {
+            font-weight: bold;
+          }
+          .dashed {
+            border-top: 1px dashed #000;
+            margin: 2px 0;
+          }
+          .info {
+            margin: 4px 0;
+          }
+          .info > div {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+          }
+          .item-name {
+            word-break: break-word;
+            overflow-wrap: break-word;
+          }
+          .item-note {
+            font-size: 9px;
+            color: #333;
+            margin-left: 4px;
+            word-break: break-word;
+            overflow-wrap: break-word;
+          }
+          .qty-label {
+            color: #333;
+          }
+          .note-content {
+            white-space: pre-wrap;
+            word-break: break-word;
+            overflow-wrap: break-word;
+            margin-top: 1px;
+          }
+          .footer {
+            margin-top: 8px;
+            font-weight: bold;
+          }
+          .gap-4 {
+            height: 4px;
+          }
+          .print-spacer {
+            height: 12mm;
+          }
+          @media print {
+            .receipt-58mm {
+              width: 48mm;
+              padding: 0;
+              margin: 0 auto;
+            }
+            .print-spacer {
+              height: 8mm;
+            }
+          }
+        `}</style>
+      </div>
+    );
+  }
+);
+
+/* ─── Legacy aliases (backward compat) ──────────────────────────────── */
+/** @deprecated Use Receipt58mmData */
+export type ReceiptData = Receipt58mmData;
+/** @deprecated Use Receipt58mmStore */
+export type ReceiptStore = Receipt58mmStore;
+/** @deprecated Use Receipt58mm */
+export const Receipt = Receipt58mm;

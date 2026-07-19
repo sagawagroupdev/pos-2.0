@@ -2,36 +2,49 @@ import { requireRole } from "@/lib/session";
 import { getMenu } from "@/lib/menu";
 import { getSettings, getCashierOutlet } from "@/lib/settings";
 import { prisma } from "@/lib/db";
+import { getLockedQrCheckout } from "@/lib/qr-checkout";
 import { PosHeader } from "./pos-header";
-import { PosTerminal, type DraftOrder } from "./pos-terminal";
+import {
+  PosTerminal,
+  type DraftOrder,
+  type QrCheckoutSnapshot,
+} from "./pos-terminal";
 import { CashierProvider } from "./cashier-context";
 import { DraftsUIProvider } from "./drafts-ui-context";
+import { QrOrderSheetUIProvider } from "./qr-order-sheet-ui-context";
 
 export default async function PosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ resume?: string }>;
+  searchParams: Promise<{ resume?: string; checkout?: string }>;
 }) {
   const session = await requireRole("CASHIER");
-  const [menu, settings, outlet, { resume }] = await Promise.all([
+  const [menu, settings, outlet, { resume, checkout }] = await Promise.all([
     getMenu(),
     getSettings(),
     getCashierOutlet(session.user.id),
     searchParams,
   ]);
 
+  let qrCheckout: QrCheckoutSnapshot | null = null;
+  let checkoutError: string | null = null;
+  if (checkout) {
+    qrCheckout = await getLockedQrCheckout({
+      checkoutLockToken: checkout,
+      cashierId: session.user.id,
+    });
+    if (!qrCheckout) {
+      checkoutError = "Checkout QR tidak tersedia atau kuncinya kedaluwarsa.";
+    }
+  }
+
   let drafts: DraftOrder[] = [];
   if (settings.enableDraftOrders) {
     const rows = await prisma.order.findMany({
       where: {
         cashierId: session.user.id,
-        // Cashier holds only — these were created with skipStock, so no stock
-        // is reserved. QR orders (which reserved stock) are handled in the
-        // Orders Dashboard via confirm/cancel instead.
         channel: "CASHIER",
-        status: {
-          in: ["DRAFT", "PENDING", "PENDING_PAYMENT", "WAITING_CONFIRMATION"],
-        },
+        status: "DRAFT",
       },
       orderBy: { createdAt: "desc" },
       include: { items: true },
@@ -40,9 +53,9 @@ export default async function PosPage({
       id: o.id,
       orderNumber: o.orderNumber,
       type: o.type,
-      status: o.status as DraftOrder["status"],
+      status: "DRAFT",
       channel: o.channel,
-      paymentMethod: o.paymentMethod,
+      paymentMethod: o.paymentMethod ?? "CASH",
       customerName: o.customerName,
       customerPhone: o.customerPhone,
       tableNumber: o.tableNumber,
@@ -71,8 +84,9 @@ export default async function PosPage({
           enabled={settings.enableDraftOrders}
           count={drafts.length}
         >
-          <PosHeader storeName={outlet.outletName} cashierId={session.user.id} />
-          <PosTerminal
+          <QrOrderSheetUIProvider>
+            <PosHeader storeName={outlet.outletName} cashierId={session.user.id} />
+            <PosTerminal
             menu={menu}
             store={{
               storeName: outlet.outletName,
@@ -85,7 +99,11 @@ export default async function PosPage({
             enableDraftOrders={settings.enableDraftOrders}
             drafts={drafts}
             resumeId={resume ?? null}
+            qrCheckout={qrCheckout}
+            checkoutLockToken={qrCheckout ? checkout ?? null : null}
+            checkoutError={checkoutError}
           />
+          </QrOrderSheetUIProvider>
         </DraftsUIProvider>
       </CashierProvider>
     </div>

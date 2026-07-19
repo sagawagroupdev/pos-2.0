@@ -28,9 +28,7 @@ enum PaymentMethod {
 
 enum OrderStatus {
   DRAFT
-  PENDING
-  PENDING_PAYMENT
-  WAITING_CONFIRMATION
+  AWAITING_PAYMENT
   PAID
   CANCELLED
 }
@@ -200,8 +198,13 @@ model Order {
   customerEmail String?
   tableNumber   String?
   type          OrderType     @default(DINE_IN)
-  paymentMethod PaymentMethod
-  status        OrderStatus   @default(PENDING)
+  requestedPaymentMethod PaymentMethod?
+  paymentMethod          PaymentMethod?
+  checkoutToken          String?        @unique
+  checkoutLockToken      String?        @unique
+  checkoutLockedBy       String?
+  checkoutLockedAt       DateTime?
+  status                 OrderStatus    @default(DRAFT)
   note          String?
 
   items OrderItem[]
@@ -225,6 +228,8 @@ model Order {
   @@index([status])
   @@index([transactionDate])
   @@index([deletedAt])
+  @@index([cashierId, status])
+  @@index([checkoutLockedBy, checkoutLockedAt])
 }
 
 model OrderItem {

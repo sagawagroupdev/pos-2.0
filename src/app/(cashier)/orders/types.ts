@@ -14,7 +14,7 @@ export type OrderRow = {
   channel: "CASHIER" | "QR";
   type: "DINE_IN" | "TAKE_AWAY";
   status: OrderStatus;
-  paymentMethod: "CASH" | "CARD" | "QRIS";
+  paymentMethod: "CASH" | "CARD" | "QRIS" | null;
   cashierName: string | null;
   customerName: string | null;
   customerPhone: string | null;

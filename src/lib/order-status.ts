@@ -1,23 +1,12 @@
-export type HeldStatus =
+export type OrderStatus =
   | "DRAFT"
-  | "PENDING"
-  | "PENDING_PAYMENT"
-  | "WAITING_CONFIRMATION";
-
-export type OrderStatus = HeldStatus | "PAID" | "CANCELLED";
-
-export const HELD_STATUSES: HeldStatus[] = [
-  "DRAFT",
-  "PENDING",
-  "PENDING_PAYMENT",
-  "WAITING_CONFIRMATION",
-];
+  | "AWAITING_PAYMENT"
+  | "PAID"
+  | "CANCELLED";
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   DRAFT: "Draft",
-  PENDING: "Pending",
-  PENDING_PAYMENT: "Belum Bayar",
-  WAITING_CONFIRMATION: "Menunggu Konfirmasi",
+  AWAITING_PAYMENT: "Menunggu Pembayaran",
   PAID: "Lunas",
   CANCELLED: "Dibatalkan",
 };
@@ -27,21 +16,17 @@ export const ORDER_STATUS_VARIANT: Record<
   "default" | "secondary" | "destructive" | "outline"
 > = {
   DRAFT: "outline",
-  PENDING: "outline",
-  PENDING_PAYMENT: "secondary",
-  WAITING_CONFIRMATION: "secondary",
+  AWAITING_PAYMENT: "secondary",
   PAID: "default",
   CANCELLED: "destructive",
 };
 
-// Status options offered when editing a held order (Draft Sheet & Dashboard).
-export const HELD_STATUS_OPTIONS: { value: HeldStatus; label: string }[] = [
-  { value: "DRAFT", label: "Draft" },
-  { value: "PENDING_PAYMENT", label: "Belum Bayar" },
-  { value: "WAITING_CONFIRMATION", label: "Menunggu Konfirmasi" },
-  { value: "PENDING", label: "Pending" },
-];
+export function isDraftStatus(status: string): status is "DRAFT" {
+  return status === "DRAFT";
+}
 
-export function isHeldStatus(status: string): status is HeldStatus {
-  return (HELD_STATUSES as string[]).includes(status);
+export function isAwaitingPaymentStatus(
+  status: string,
+): status is "AWAITING_PAYMENT" {
+  return status === "AWAITING_PAYMENT";
 }

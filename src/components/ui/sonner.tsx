@@ -10,6 +10,7 @@ function Toaster({ ...props }: ToasterProps) {
       theme="light"
       richColors
       className="toaster group"
+      position="top-center"
       style={
         {
           "--normal-bg": "oklch(1 0 0)",

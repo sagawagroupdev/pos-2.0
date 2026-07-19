@@ -65,7 +65,7 @@ export function ConfirmStep({
         <div className="flex-1">
           <h1 className="text-base font-semibold">Konfirmasi Pesanan</h1>
           <p className="text-xs text-muted-foreground">
-            {orderType === "DINE_IN" ? "Makan di Tempat" : "Bungkus"}
+            {orderType === "DINE_IN" ? "Dine In" : "Take Away"}
           </p>
         </div>
       </header>

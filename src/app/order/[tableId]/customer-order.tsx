@@ -48,7 +48,8 @@ export function CustomerOrder({
   const [submitting, setSubmitting] = useState(false);
   const [globalNote, setGlobalNote] = useState("");
   const [doneStatus, setDoneStatus] = useState<string | null>(null);
-  const [doneOrderId, setDoneOrderId] = useState<string | null>(null);
+  const [doneCheckoutToken, setDoneCheckoutToken] = useState<string | null>(null);
+  const [doneOrderNumber, setDoneOrderNumber] = useState<string | null>(null);
   const [donePaymentMethod, setDonePaymentMethod] = useState<"CASH" | "QRIS">("CASH");
   const [outletRipple, setOutletRipple] = useState(0);
   const router = useRouter();
@@ -87,7 +88,7 @@ export function CustomerOrder({
   function handleOrderAgain() {
     cart.clearCart();
     setDoneStatus(null);
-    setDoneOrderId(null);
+    setDoneCheckoutToken(null);
     navigate("menu");
   }
 
@@ -119,7 +120,8 @@ export function CustomerOrder({
       }
       cart.clearCart();
       setDoneStatus(res.status);
-      setDoneOrderId(res.orderId);
+      setDoneCheckoutToken(res.checkoutToken);
+      setDoneOrderNumber(res.orderNumber);
       setDonePaymentMethod(data.paymentMethod);
       navigate("done");
     });
@@ -153,7 +155,8 @@ export function CustomerOrder({
     return (
       <div key="done" className="animate-in slide-in-from-right duration-300">
         <OrderSuccess
-          orderId={doneOrderId}
+          checkoutToken={doneCheckoutToken}
+          orderNumber={doneOrderNumber}
           status={doneStatus}
           paymentMethod={donePaymentMethod}
           tableNumber={tableNumber}
@@ -374,7 +377,7 @@ export function CustomerOrder({
           <div className="flex-1 text-center">
             <div className="text-md font-semibold">Meja {tableNumber}</div>
             <div className="text-xs text-muted-foreground">
-              {orderType === "DINE_IN" ? "Makan di Tempat" : "Bungkus"}
+              {orderType === "DINE_IN" ? "Dine In" : "Take Away"}
             </div>
           </div>
         </div>

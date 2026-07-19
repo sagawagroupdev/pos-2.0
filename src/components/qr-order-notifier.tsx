@@ -14,7 +14,7 @@ type NewQrOrderPayload = {
   customerName: string | null;
   tableNumber: string | null;
   total: number;
-  paymentMethod: "CASH" | "QRIS";
+  requestedPaymentMethod: "CASH" | "QRIS";
 };
 
 function playAlert() {
@@ -68,7 +68,7 @@ export function QrOrderNotifier({ cashierId }: { cashierId: string }) {
       toast.success("Pesanan QR Baru!", {
         description: `${data.customerName ?? "Pelanggan"}${
           data.tableNumber ? ` · Meja ${data.tableNumber}` : ""
-        } · ${rupiah(data.total)} · ${data.paymentMethod}`,
+        } · ${rupiah(data.total)} · Preferensi ${data.requestedPaymentMethod}`,
         duration: 10000,
         action: {
           label: "Lihat",

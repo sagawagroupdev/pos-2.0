@@ -8,21 +8,8 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { StatusBadge } from "@/components/ui/status-badge";
-import {
-  HELD_STATUS_OPTIONS,
-  isHeldStatus,
-  type HeldStatus,
-} from "@/lib/order-status";
+import { isAwaitingPaymentStatus, isDraftStatus } from "@/lib/order-status";
 import { rupiah } from "@/lib/format";
 import type { OrderRow } from "./types";
 
@@ -44,9 +31,6 @@ export function OrderDetailDialog({
   order,
   pending,
   onOpenChange,
-  onStatusChange,
-  onConfirm,
-  onCancel,
   onContinue,
   onDelete,
   onDeleteHistory,
@@ -54,9 +38,6 @@ export function OrderDetailDialog({
   order: OrderRow | null;
   pending: boolean;
   onOpenChange: (open: boolean) => void;
-  onStatusChange: (id: string, status: HeldStatus) => void;
-  onConfirm: (id: string) => void;
-  onCancel: (id: string) => void;
   onContinue: (id: string) => void;
   onDelete: (id: string) => void;
   onDeleteHistory: (order: OrderRow) => void;
@@ -95,7 +76,7 @@ export function OrderDetailDialog({
                 <InfoRow label="No. Meja" value={order.tableNumber ?? "-"} />
               )}
               <InfoRow label="Tipe" value={TYPE_LABEL[order.type]} />
-              <InfoRow label="Pembayaran" value={order.paymentMethod} />
+              <InfoRow label="Pembayaran" value={order.paymentMethod ?? "-"} />
               {order.note && <InfoRow label="Catatan" value={order.note} />}
             </div>
 
@@ -134,7 +115,7 @@ export function OrderDetailDialog({
                 <span>{rupiah(order.total)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Bayar ({order.paymentMethod})</span>
+                <span>Bayar ({order.paymentMethod ?? "-"})</span>
                 <span>{rupiah(order.paidAmount)}</span>
               </div>
               {order.changeAmount > 0 && (
@@ -163,69 +144,29 @@ export function OrderDetailDialog({
           </div>
         )}
 
-        {order && isHeldStatus(order.status) && (
-          <div className="flex items-center justify-between gap-2 border-t px-4 py-3">
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={<Button variant="outline" />}
-                disabled={pending}
-              >
-                Ubah Status
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start">
-                <DropdownMenuRadioGroup
-                  value={order.status}
-                  onValueChange={(v) =>
-                    v && onStatusChange(order.id, v as HeldStatus)
-                  }
-                >
-                  <DropdownMenuLabel>Status Pesanan</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {HELD_STATUS_OPTIONS.map((opt) => (
-                    <DropdownMenuRadioItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div className="flex gap-2">
-              {order.channel === "CASHIER" ? (
-                <>
-                  <Button
-                    variant="outline"
-                    disabled={pending}
-                    onClick={() => onContinue(order.id)}
-                  >
-                    Lanjutkan
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    disabled={pending}
-                    onClick={() => onDelete(order.id)}
-                  >
-                    Hapus
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <Button
-                    variant="destructive"
-                    disabled={pending}
-                    onClick={() => onCancel(order.id)}
-                  >
-                    Batalkan
-                  </Button>
-                  <Button disabled={pending} onClick={() => onConfirm(order.id)}>
-                    Konfirmasi Lunas
-                  </Button>
-                </>
-              )}
-            </div>
+        {order && isDraftStatus(order.status) && order.channel === "CASHIER" && (
+          <div className="flex justify-end gap-2 border-t px-4 py-3">
+            <Button
+              variant="outline"
+              disabled={pending}
+              onClick={() => onContinue(order.id)}
+            >
+              Lanjutkan
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={pending}
+              onClick={() => onDelete(order.id)}
+            >
+              Hapus
+            </Button>
           </div>
         )}
 
-        {order && !isHeldStatus(order.status) && !order.deletedAt && (
+        {order &&
+          !isDraftStatus(order.status) &&
+          !isAwaitingPaymentStatus(order.status) &&
+          !order.deletedAt && (
           <div className="flex justify-end border-t px-4 py-3">
             <Button
               variant="destructive"

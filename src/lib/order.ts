@@ -1,6 +1,11 @@
 import "server-only";
 import { prisma } from "@/lib/db";
 import { getSettings } from "@/lib/settings";
+import {
+  createCheckoutToken,
+  isCheckoutToken,
+  normalizePayment,
+} from "@/lib/qr-checkout-protocol";
 
 export type CartLine = {
   itemId: string;
@@ -49,8 +54,11 @@ export type CreateOrderInput = {
   lines: CartLine[];
   channel: "CASHIER" | "QR";
   type: "DINE_IN" | "TAKE_AWAY";
-  paymentMethod: "CASH" | "CARD" | "QRIS";
-  status: "DRAFT" | "PENDING" | "PENDING_PAYMENT" | "WAITING_CONFIRMATION" | "PAID";
+  /** Final payment method. Awaiting QR orders intentionally leave this null. */
+  paymentMethod?: "CASH" | "CARD" | "QRIS" | null;
+  status: "DRAFT" | "AWAITING_PAYMENT" | "PAID" | "CANCELLED";
+  requestedPaymentMethod?: "CASH" | "CARD" | "QRIS" | null;
+  checkoutToken?: string | null;
   discount?: number;
   paidAmount?: number;
   customerName?: string;
@@ -68,6 +76,9 @@ export type CreateOrderInput = {
 export async function createOrder(input: CreateOrderInput) {
   if (!input.lines.length) {
     throw new Error("Pesanan kosong");
+  }
+  if (input.status === "PAID" && !input.paymentMethod) {
+    throw new Error("Metode pembayaran wajib diisi untuk pesanan lunas");
   }
 
   const settings = await getSettings();
@@ -95,11 +106,29 @@ export async function createOrder(input: CreateOrderInput) {
     settings.taxEnabled
   );
 
-  const paidAmount = input.paidAmount ?? 0;
-  const changeAmount =
-    input.status === "PAID" && input.paymentMethod === "CASH"
-      ? Math.max(0, paidAmount - totals.total)
-      : 0;
+  const isAwaitingQrOrder =
+    input.channel === "QR" && input.status === "AWAITING_PAYMENT";
+  if (
+    input.checkoutToken !== undefined &&
+    input.checkoutToken !== null &&
+    (!isAwaitingQrOrder || !isCheckoutToken(input.checkoutToken))
+  ) {
+    throw new Error("Token checkout tidak valid");
+  }
+  const paymentMethod = isAwaitingQrOrder ? null : input.paymentMethod ?? null;
+  const requestedPaymentMethod =
+    input.requestedPaymentMethod ??
+    (isAwaitingQrOrder ? input.paymentMethod ?? null : null);
+  const checkoutToken = isAwaitingQrOrder
+    ? input.checkoutToken ?? createCheckoutToken()
+    : null;
+  const suppliedPaidAmount = input.paidAmount ?? 0;
+  const payment =
+    input.status === "PAID"
+      ? normalizePayment(input.paymentMethod!, suppliedPaidAmount, totals.total)
+      : { paidAmount: suppliedPaidAmount, changeAmount: 0 };
+  const paidAmount = payment.paidAmount;
+  const changeAmount = payment.changeAmount;
 
   return prisma.$transaction(async (tx) => {
     if (input.deleteDraftId) {
@@ -117,7 +146,9 @@ export async function createOrder(input: CreateOrderInput) {
             orderNumber,
             channel: input.channel,
             type: input.type,
-            paymentMethod: input.paymentMethod,
+            paymentMethod,
+            requestedPaymentMethod,
+            checkoutToken,
             status: input.status,
             cashierId: input.cashierId ?? null,
             cashierName: input.cashierName ?? null,
@@ -154,10 +185,13 @@ export async function createOrder(input: CreateOrderInput) {
 
     if (!input.skipStock) {
       for (const r of resolved) {
-        await tx.item.update({
-          where: { id: r.item.id },
+        const stockUpdate = await tx.item.updateMany({
+          where: { id: r.item.id, stock: { gte: r.quantity } },
           data: { stock: { decrement: r.quantity } },
         });
+        if (stockUpdate.count !== 1) {
+          throw new Error(`Stok ${r.item.name} tidak cukup`);
+        }
       }
     }
 

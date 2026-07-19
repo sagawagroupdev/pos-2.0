@@ -1,4 +1,4 @@
-"use server";
+﻿"use server";
 
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -7,14 +7,12 @@ import { createOrder } from "@/lib/order";
 import { invalidateMenuCache } from "@/lib/menu";
 import { prisma } from "@/lib/db";
 import { notifyOrderUpdated } from "@/lib/realtime";
-
-const HELD_STATUSES = [
-  "DRAFT",
-  "PENDING",
-  "PENDING_PAYMENT",
-  "WAITING_CONFIRMATION",
-] as const;
-const heldStatusSchema = z.enum(HELD_STATUSES);
+import {
+  claimQrCheckout,
+  parseCheckoutPayload,
+  releaseQrCheckout,
+  settleQrCheckout,
+} from "@/lib/qr-checkout";
 
 const lineSchema = z.object({
   itemId: z.string().min(1),
@@ -117,6 +115,90 @@ export async function holdPosOrder(input: PosOrderInput): Promise<SubmitResult> 
   }
 }
 
+export async function claimQrCheckoutAction(
+  payload: string
+): Promise<
+  | { ok: true; checkoutLockToken: string }
+  | { ok: false; error: string }
+> {
+  const session = await requireRole("CASHIER");
+  const customerToken = parseCheckoutPayload(payload);
+  if (!customerToken) return { ok: false, error: "QR pesanan tidak valid" };
+
+  try {
+    const result = await claimQrCheckout({
+      customerToken,
+      cashierId: session.user.id,
+    });
+    if (result.ok) {
+      revalidatePath("/pos");
+      revalidatePath("/orders");
+    }
+    return result;
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Gagal mengambil pesanan QR",
+    };
+  }
+}
+
+export async function claimQrOrderByNumberAction(
+  orderNumber: string
+): Promise<
+  | { ok: true; checkoutLockToken: string }
+  | { ok: false; error: string }
+> {
+  const session = await requireRole("CASHIER");
+  if (!orderNumber.trim()) return { ok: false, error: "Nomor pesanan tidak valid" };
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { orderNumber: orderNumber.trim() },
+      select: { checkoutToken: true, cashierId: true, channel: true, status: true },
+    });
+    if (!order?.checkoutToken || order.channel !== "QR" || order.status !== "AWAITING_PAYMENT") {
+      return { ok: false, error: "Pesanan tidak ditemukan" };
+    }
+
+    const result = await claimQrCheckout({
+      customerToken: order.checkoutToken,
+      cashierId: session.user.id,
+    });
+    if (result.ok) {
+      revalidatePath("/pos");
+      revalidatePath("/orders");
+    }
+    return result;
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Gagal mengambil pesanan",
+    };
+  }
+}
+
+export async function releaseQrCheckoutAction(
+  checkoutLockToken: string
+): Promise<ActionResult> {
+  const session = await requireRole("CASHIER");
+  try {
+    const released = await releaseQrCheckout({
+      checkoutLockToken,
+      cashierId: session.user.id,
+    });
+    if (!released) return { ok: false, error: "Kunci checkout tidak ditemukan" };
+    revalidatePath("/pos");
+    revalidatePath("/orders");
+    return { ok: true };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Gagal melepas checkout",
+    };
+  }
+}
+
 export async function discardDraft(orderId: string): Promise<ActionResult> {
   const session = await requireRole("CASHIER");
   const order = await prisma.order.findUnique({ where: { id: orderId } });
@@ -126,7 +208,7 @@ export async function discardDraft(orderId: string): Promise<ActionResult> {
     !order ||
     order.cashierId !== session.user.id ||
     order.channel !== "CASHIER" ||
-    !HELD_STATUSES.includes(order.status as (typeof HELD_STATUSES)[number])
+    order.status !== "DRAFT"
   ) {
     return { ok: false, error: "Pesanan tidak ditemukan" };
   }
@@ -138,32 +220,130 @@ export async function discardDraft(orderId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function updateOrderStatus(
-  orderId: string,
-  status: (typeof HELD_STATUSES)[number]
-): Promise<ActionResult> {
+export async function settleQrCheckoutAction(
+  input: {
+    checkoutLockToken: string;
+    lines: { itemId: string; quantity: number; note?: string }[];
+    type: "DINE_IN" | "TAKE_AWAY";
+    paymentMethod: "CASH" | "CARD" | "QRIS";
+    paidAmount: number;
+    customerName?: string;
+    cashierName: string;
+    note?: string;
+    discount: number;
+  }
+): Promise<SubmitResult> {
   const session = await requireRole("CASHIER");
 
-  const parsed = heldStatusSchema.safeParse(status);
-  if (!parsed.success) {
-    return { ok: false, error: "Status tidak valid" };
-  }
+  try {
+    const result = await settleQrCheckout(
+      {
+        checkoutLockToken: input.checkoutLockToken,
+        lines: input.lines,
+        type: input.type,
+        paymentMethod: input.paymentMethod,
+        paidAmount: input.paidAmount,
+        customerName: input.customerName,
+        cashierName: input.cashierName,
+        note: input.note,
+        discount: input.discount,
+      },
+      session.user.id
+    );
+    if (!result) return { ok: false, error: "Gagal memproses pembayaran QR" };
 
-  const order = await prisma.order.findUnique({ where: { id: orderId } });
-  if (
-    !order ||
-    order.cashierId !== session.user.id ||
-    !HELD_STATUSES.includes(order.status as (typeof HELD_STATUSES)[number])
-  ) {
-    return { ok: false, error: "Pesanan tidak ditemukan" };
+    await invalidateMenuCache();
+    await notifyOrderUpdated(session.user.id);
+    revalidatePath("/orders");
+    revalidatePath("/pos");
+    return { ok: true, orderId: result.id, orderNumber: result.orderNumber };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Gagal memproses pembayaran QR",
+    };
   }
+}
 
-  await prisma.order.update({
-    where: { id: orderId },
-    data: { status: parsed.data },
-  });
-  await notifyOrderUpdated(session.user.id);
-  revalidatePath("/pos");
-  revalidatePath("/orders");
-  return { ok: true };
+export type QrOrderListItem = {
+  id: string;
+  orderNumber: string;
+  tableNumber: string | null;
+  customerName: string | null;
+  total: number;
+  itemCount: number;
+  createdAt: Date;
+};
+
+export async function listQrOrdersAction(): Promise<
+  { ok: true; orders: QrOrderListItem[] } | { ok: false; error: string }
+> {
+  const session = await requireRole("CASHIER");
+  try {
+    const orders = await prisma.order.findMany({
+      where: {
+        cashierId: session.user.id,
+        channel: "QR",
+        status: "AWAITING_PAYMENT",
+      },
+      select: {
+        id: true,
+        orderNumber: true,
+        tableNumber: true,
+        customerName: true,
+        total: true,
+        createdAt: true,
+        items: { select: { id: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    return {
+      ok: true,
+      orders: orders.map((o) => ({
+        ...o,
+        itemCount: o.items.length,
+        items: undefined,
+      })),
+    };
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Gagal memuat daftar pesanan QR",
+    };
+  }
+}
+
+export async function claimQrOrderByIdAction(
+  orderId: string
+): Promise<
+  | { ok: true; checkoutLockToken: string }
+  | { ok: false; error: string }
+> {
+  const session = await requireRole("CASHIER");
+  if (!orderId.trim()) return { ok: false, error: "ID pesanan tidak valid" };
+
+  try {
+    const order = await prisma.order.findUnique({
+      where: { id: orderId.trim() },
+      select: { checkoutToken: true, channel: true, status: true },
+    });
+    if (!order?.checkoutToken || order.channel !== "QR" || order.status !== "AWAITING_PAYMENT") {
+      return { ok: false, error: "Pesanan tidak ditemukan" };
+    }
+
+    const result = await claimQrCheckout({
+      customerToken: order.checkoutToken,
+      cashierId: session.user.id,
+    });
+    if (result.ok) {
+      revalidatePath("/pos");
+      revalidatePath("/orders");
+    }
+    return result;
+  } catch (e) {
+    return {
+      ok: false,
+      error: e instanceof Error ? e.message : "Gagal mengambil pesanan",
+    };
+  }
 }

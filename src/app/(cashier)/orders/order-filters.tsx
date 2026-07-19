@@ -32,12 +32,9 @@ export function OrderFilters({
           <SelectContent>
             <SelectGroup>
               <SelectItem value="ALL">Semua</SelectItem>
+              <SelectItem value="DRAFT">Draft</SelectItem>
+              <SelectItem value="AWAITING_PAYMENT">Menunggu Pembayaran</SelectItem>
               <SelectItem value="PAID">Lunas</SelectItem>
-              <SelectItem value="PENDING_PAYMENT">Menunggu Bayar</SelectItem>
-              <SelectItem value="WAITING_CONFIRMATION">
-                Menunggu Konfirmasi
-              </SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
               <SelectItem value="CANCELLED">Dibatalkan</SelectItem>
             </SelectGroup>
           </SelectContent>
