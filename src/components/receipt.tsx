@@ -2,7 +2,7 @@
 
 import { forwardRef } from "react";
 
-/* â”€â”€â”€ Types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Types  */
 
 export type ReceiptItem = {
   name: string;
@@ -27,9 +27,9 @@ export type Receipt58mmData = {
   subtotal: number;
   discount: number;
   tax: number;
-  /** Optional â€” defaults to 0. */
+  /** Optional” defaults to 0. */
   serviceCharge?: number;
-  /** Optional â€” defaults to 0. */
+  /** Optional” defaults to 0. */
   additionalFee?: number;
   total: number;
 
@@ -56,7 +56,6 @@ export type Receipt58mmProps = {
   config?: Receipt58mmConfig;
 };
 
-/* â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 const fmt = (n: number) => new Intl.NumberFormat("id-ID").format(n);
 
@@ -67,10 +66,10 @@ const payLabel = {
   QRIS: "QRIS",
 } as const;
 
-/* â”€â”€â”€ Component â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
 export const Receipt58mm = forwardRef<HTMLDivElement, Receipt58mmProps>(
   function Receipt58mm({ data, store, config }, ref) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const showHeaders = config?.showHeaders ?? false;
 
     const date = new Date(data.transactionDate);
@@ -83,7 +82,7 @@ export const Receipt58mm = forwardRef<HTMLDivElement, Receipt58mmProps>(
 
     return (
       <div ref={ref} className="receipt-58mm">
-        {/* â”€â”€ 1. Header Outlet â”€â”€ */}
+        {/*   1. Header Outlet   */}
         <div className="center bold">{store.storeName}</div>
         {store.address && <div className="center">{store.address}</div>}
         {store.phone && <div className="center">{store.phone}</div>}
@@ -181,7 +180,7 @@ export const Receipt58mm = forwardRef<HTMLDivElement, Receipt58mmProps>(
           </div>
         )}
 
-        {/* â”€â”€ 8. Footer â”€â”€ */}
+        {/*   8. Footer   */}
         <div className="center footer">
           {store.receiptFooter ?? "Thank You"}
         </div>

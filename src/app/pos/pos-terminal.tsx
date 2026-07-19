@@ -35,7 +35,7 @@ import {
   type OrderType,
   type PaymentMethod,
 } from "./cart-panel";
-import { Receipt58mm, type Receipt58mmData } from "@/components/receipt";
+import { Receipt58mm, type Receipt58mmData, type Receipt58mmStore } from "@/components/receipt";
 import { rupiah } from "@/lib/format";
 
 export type DraftStatus =
@@ -154,6 +154,7 @@ export function PosTerminal({
   // Auto-load QR checkout items into cart when claimed.
   useEffect(() => {
     if (!qrCheckout) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setCart(
       qrCheckout.items.map((it) => ({
         itemId: it.itemId,
