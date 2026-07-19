@@ -46,10 +46,10 @@ function headerBlock(store: ReceiptStore): Uint8Array[] {
   const lines: Uint8Array[] = [];
   lines.push(align(1));
   lines.push(bold(1));
-  lines.push(txt(pad(store.storeName)));
+  lines.push(txt(store.storeName));
   lines.push(bold(0));
-  if (store.address) lines.push(txt(pad(store.address)));
-  if (store.phone) lines.push(txt(pad("Telp: " + store.phone)));
+  if (store.address) lines.push(txt(store.address));
+  if (store.phone) lines.push(txt("Telp: " + store.phone));
   lines.push(txt(""));
   return lines;
 }
@@ -146,7 +146,7 @@ function footerBlock(store: ReceiptStore): Uint8Array[] {
   const lines: Uint8Array[] = [];
   lines.push(align(1));
   lines.push(txt(""));
-  lines.push(txt(pad(store.receiptFooter ?? "Terima Kasih")));
+  lines.push(txt(store.receiptFooter ?? "Terima Kasih"));
   lines.push(txt(""));
   return lines;
 }
