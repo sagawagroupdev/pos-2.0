@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Dish01Icon, Delete02Icon, Restaurant01Icon, ShoppingBag01Icon, UserIcon, TableRoundIcon } from "@hugeicons/core-free-icons";
+import { Cancel01Icon, Dish01Icon, Delete02Icon, Restaurant01Icon, ShoppingBag01Icon, UserIcon, TableRoundIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -61,6 +61,8 @@ type CartPanelProps = {
   onSubmit: () => void;
   onHold: () => void;
   onPrintLast: () => void;
+  onCloseCart?: () => void;
+  className?: string;
 };
 
 const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
@@ -104,13 +106,27 @@ export function CartPanel({
   onSubmit,
   onHold,
   onPrintLast,
+  onCloseCart,
+  className,
 }: CartPanelProps) {
   const hasItems = items.length > 0;
 
   return (
-    <aside className="relative flex w-80 shrink-0 flex-col border-l">
+    <aside className={cn("relative flex w-80 shrink-0 flex-col border-l", className)}>
       <header className="flex items-center justify-between px-3 py-2.5">
-        <h2 className="text-base font-semibold">Keranjang</h2>
+        <div className="flex items-center gap-2">
+          {onCloseCart && (
+            <button
+              type="button"
+              onClick={onCloseCart}
+              className="flex items-center justify-center lg:hidden"
+              aria-label="Tutup keranjang"
+            >
+              <HugeiconsIcon icon={Cancel01Icon} size={20} color="currentColor" strokeWidth={1.5} />
+            </button>
+          )}
+          <h2 className="text-base font-semibold">Keranjang</h2>
+        </div>
         <div className="flex items-center gap-2">
           {hasItems && (
             <button
@@ -241,7 +257,7 @@ export function CartPanel({
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
                     orderType === "DINE_IN"
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-blue-500 bg-blue-100 text-blue-500"
                       : "border-border bg-muted/40 hover:bg-muted"
                   )}
                 >
@@ -254,7 +270,7 @@ export function CartPanel({
                   className={cn(
                     "flex flex-1 items-center justify-center gap-1.5 rounded-lg border px-2.5 py-2 text-sm font-medium transition-colors",
                     orderType === "TAKE_AWAY"
-                      ? "border-primary bg-primary/10 text-primary"
+                      ? "border-blue-500 bg-blue-100 text-blue-500"
                       : "border-border bg-muted/40 hover:bg-muted"
                   )}
                 >

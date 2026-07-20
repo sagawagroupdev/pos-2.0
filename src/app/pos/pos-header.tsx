@@ -1,25 +1,16 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { FloppyDiskIcon, FullScreenIcon, Home01Icon, LicenseDraftFreeIcons, Notification01Icon, PrinterIcon } from "@hugeicons/core-free-icons";
+import { FullScreenIcon, LicenseDraftFreeIcons, Notification01Icon, PrinterIcon, ArrowLeft02Icon, ShieldUserIcon, FloppyDiskIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useCashier } from "./cashier-context";
 import { useDraftsUI } from "./drafts-ui-context";
 import { usePrinter } from "./printer-context";
 import { useQrOrderSheetUI } from "./qr-order-sheet-ui-context";
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
 import { QrOrderNotifier } from "@/components/qr-order-notifier";
 
 export function PosHeader({
@@ -32,7 +23,7 @@ export function PosHeader({
   const printer = usePrinter();
   const { enabled: draftsEnabled, count: draftCount, setOpen: setDraftsOpen } =
     useDraftsUI();
-  const { setOpen: setQrOrderSheetOpen } = useQrOrderSheetUI();
+  const { count: qrOrderCount, setOpen: setQrOrderSheetOpen } = useQrOrderSheetUI();
   const [draftName, setDraftName] = useState(cashierName);
   const [prevCashierName, setPrevCashierName] = useState(cashierName);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -71,49 +62,34 @@ export function PosHeader({
   return (
     <header className="flex items-center justify-between border-b px-4 py-2.5">
       <QrOrderNotifier cashierId={cashierId} />
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink
-              render={
-                <Link href="/overview" className="flex items-center gap-1.5">
-                  <HugeiconsIcon icon={Home01Icon} size={16} color="currentColor" strokeWidth={1.5} />
-                  Overview
-                </Link>
-              }
-            />
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>Kasir</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
+      <Link href="/overview">
+        <HugeiconsIcon icon={ArrowLeft02Icon} size={18} color="currentColor" strokeWidth={1.5} />
+      </Link>
 
-      <div className="flex items-center gap-2">
-        <div className="flex items-center gap-1.5">
-          <Label htmlFor="cashier-name" className="text-muted-foreground">
-            Kasir:
-          </Label>
+      <div className="flex items-center gap-1.5">
+        <div className="relative">
+          <span className="absolute left-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+            <HugeiconsIcon icon={ShieldUserIcon} size={16} color="currentColor" strokeWidth={1.5} />
+          </span>
           <Input
             id="cashier-name"
             value={draftName}
             onChange={(e) => setDraftName(e.target.value)}
+            onBlur={() => { if (dirty) saveCashier(); }}
             onKeyDown={(e) => {
               if (e.key === "Enter") saveCashier();
             }}
             placeholder="Nama kasir"
-            className="h-8 w-40"
+            className="h-7 w-40 pl-8 pr-8 text-sm"
           />
-          <Button
-            variant="ghost"
-            size="icon"
+          <button
+            type="button"
             onClick={saveCashier}
-            disabled={!dirty}
+            className="absolute right-0 top-0 h-full px-2 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer z-10"
             aria-label="Simpan nama kasir"
           >
-            <HugeiconsIcon icon={FloppyDiskIcon} size={20} color="currentColor" strokeWidth={1.5} />
-          </Button>
+            <HugeiconsIcon icon={FloppyDiskIcon} size={16} color="currentColor" strokeWidth={1.5} />
+          </button>
         </div>
         {draftsEnabled && (
           <Button
@@ -123,7 +99,7 @@ export function PosHeader({
             aria-label="Pesanan tertahan"
             className="relative"
           >
-            <HugeiconsIcon icon={LicenseDraftFreeIcons} size={24} color="currentColor" strokeWidth={1.5} />
+            <HugeiconsIcon icon={LicenseDraftFreeIcons} size={22} color="currentColor" strokeWidth={1.5} />
             {draftCount > 0 && (
               <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
                 {draftCount}
@@ -136,8 +112,14 @@ export function PosHeader({
           size="icon"
           onClick={() => setQrOrderSheetOpen(true)}
           aria-label="Pesanan QR masuk"
+          className="relative"
         >
-          <HugeiconsIcon icon={Notification01Icon} size={24} color="currentColor" strokeWidth={1.5} />
+          <HugeiconsIcon icon={Notification01Icon} size={22} color="currentColor" strokeWidth={1.5} />
+          {qrOrderCount > 0 && (
+            <span className="absolute -right-1 -top-0.5 flex size-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-primary-foreground">
+              {qrOrderCount}
+            </span>
+          )}
         </Button>
         <Button
           variant="ghost"
@@ -146,9 +128,9 @@ export function PosHeader({
           onClick={printer.connected ? undefined : () => printer.connect()}
           className="relative"
         >
-          <HugeiconsIcon icon={PrinterIcon} size={24} color="currentColor" strokeWidth={1.5} />
+          <HugeiconsIcon icon={PrinterIcon} size={22} color="currentColor" strokeWidth={1.5} />
           <span
-            className={`absolute -right-1 -top-0.5 size-2.5 rounded-full ring-2 ring-background ${
+            className={`absolute -right-1 -top-0.5 size-2 rounded-full ring-2 ring-background ${
               printer.connected ? "bg-emerald-500" : "bg-red-500"
             }`}
           />
@@ -159,7 +141,7 @@ export function PosHeader({
           onClick={toggleFullscreen}
           aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
         >
-          <HugeiconsIcon icon={FullScreenIcon} size={24} color="currentColor" strokeWidth={1.5} />
+          <HugeiconsIcon icon={FullScreenIcon} size={22} color="currentColor" strokeWidth={1.5} />
         </Button>
       </div>
     </header>

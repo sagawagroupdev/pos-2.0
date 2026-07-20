@@ -18,7 +18,7 @@ import { useQrOrderSheetUI } from "./qr-order-sheet-ui-context";
 import { usePrinter } from "./printer-context";
 import type { MenuCategory } from "@/lib/menu";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Search01Icon } from "@hugeicons/core-free-icons";
+import { Search01Icon, ShoppingBag01Icon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { ButtonGroup } from "@/components/ui/button-group";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,7 @@ import {
 } from "./cart-panel";
 import { Receipt58mm, type Receipt58mmData, type Receipt58mmStore } from "@/components/receipt";
 import { rupiah } from "@/lib/format";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 
 export type DraftStatus =
   | "DRAFT";
@@ -140,8 +141,9 @@ export function PosTerminal({
   const [printing, setPrinting] = useState(false);
   const [connectingPrinter, setConnectingPrinter] = useState(false);
   const [releasingQrCheckout, startReleaseQrCheckout] = useTransition();
-  const { open: qrOrderSheetOpen, setOpen: setQrOrderSheetOpen } = useQrOrderSheetUI();
+  const { open: qrOrderSheetOpen, setOpen: setQrOrderSheetOpen, setCount: setQrOrderCount } = useQrOrderSheetUI();
   const [qrOrders, setQrOrders] = useState<QrOrderListItem[]>([]);
+  const [cartOpen, setCartOpen] = useState(false);
 
   // Auto-load a draft when arriving via /pos?resume=<id> (from Orders Dashboard).
   const prevResumeId = useRef<string | null>(null);
@@ -174,7 +176,7 @@ export function PosTerminal({
     if (qrCheckout.requestedPaymentMethod) setPaymentMethod(qrCheckout.requestedPaymentMethod);
   }, [qrCheckout, checkoutLockToken]);
 
-  // Fetch QR orders when sheet opens
+  // Fetch QR order count on mount
   useEffect(() => {
     if (qrOrderSheetOpen) {
       listQrOrdersAction().then((res) => {
@@ -182,6 +184,22 @@ export function PosTerminal({
       });
     }
   }, [qrOrderSheetOpen]);
+
+  // Sync QR order count to header badge on mount
+  useEffect(() => {
+    listQrOrdersAction().then((res) => {
+      if (res.ok) setQrOrderCount(res.orders.length);
+    });
+  }, [setQrOrderCount]);
+
+  // Close cart backdrop on Escape
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setCartOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, []);
 
   const receiptRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef: receiptRef });
@@ -309,6 +327,7 @@ export function PosTerminal({
       }
       toast.success("Pesanan ditahan");
       reset();
+      setCartOpen(false);
       router.refresh();
     });
   }
@@ -355,13 +374,13 @@ export function PosTerminal({
     });
   }
 
-  // Print receipt via BLE — fire & forget, never blocks the submit flow
+  // Print receipt via BLE â€” fire & forget, never blocks the submit flow
   function printToBle(data: Receipt58mmData) {
     if (!printer.connected) return;
     setPrinting(true);
     const bytes = buildReceipt(data, store);
     printer.print(bytes)
-      .catch(() => {}) // silent fail — printing is best-effort
+      .catch(() => {}) // silent fail â€” printing is best-effort
       .finally(() => setPrinting(false));
   }
 
@@ -422,8 +441,9 @@ export function PosTerminal({
       setShowSuccess(true);
       setSubmitting(false);
       reset();
+      setCartOpen(false);
 
-      // Print is fire-and-forget — doesn't block reset() or cause stuck state
+      // Print is fire-and-forget â€” doesn't block reset() or cause stuck state
       printToBle(receipt);
     }
 
@@ -485,177 +505,281 @@ export function PosTerminal({
   }
 
   return (
-    <div className="flex flex-1 overflow-hidden">
-      <div className="flex flex-1 flex-col overflow-hidden">
-        {checkoutError && (
-          <div className="border-b border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
-            {checkoutError}
-          </div>
-        )}
-        {qrCheckout && checkoutLockToken && (
-          <div className="flex items-center justify-between gap-3 border-b bg-primary/5 px-3 py-2 text-sm">
-            <div className="min-w-0">
-              <p className="font-semibold">QR Table checkout</p>
-              <p className="truncate text-xs text-muted-foreground">
-                {qrCheckout.orderNumber}
-                {qrCheckout.customerName ? ` · ${qrCheckout.customerName}` : ""}
-                {qrCheckout.tableNumber ? ` · Meja ${qrCheckout.tableNumber}` : ""}
-              </p>
+    <>
+      <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 flex-col overflow-hidden">
+          {checkoutError && (
+            <div className="border-b border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {checkoutError}
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={releasingQrCheckout}
-              onClick={handleReleaseQrCheckout}
-            >
-              {releasingQrCheckout ? "Melepas..." : "Lepas kunci"}
-            </Button>
-          </div>
-        )}
-        {menu.length === 0 ? (
-          <p className="p-4 text-muted-foreground">
-            Belum ada menu. Tambahkan item di halaman Menu.
-          </p>
-        ) : (
-          <div className="flex flex-1 flex-col overflow-hidden">
-            <div className="flex items-center gap-3 border-b px-3 py-2">
-              <QrOrderScannerDialog />
-              <ScrollArea className="flex-1">
-                <ButtonGroup>
-                  <Button
-                    variant={activeCategory === "all" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveCategory("all")}
-                  >
-                    Semua
-                  </Button>
-                  {menu.map((cat) => (
+          )}
+          {qrCheckout && checkoutLockToken && (
+            <div className="flex items-center justify-between gap-3 border-b bg-primary/5 px-3 py-2 text-sm">
+              <div className="min-w-0">
+                <p className="font-semibold">QR Table checkout</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {qrCheckout.orderNumber}
+                  {qrCheckout.customerName ? ` Â· ${qrCheckout.customerName}` : ""}
+                  {qrCheckout.tableNumber ? ` Â· Meja ${qrCheckout.tableNumber}` : ""}
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={releasingQrCheckout}
+                onClick={handleReleaseQrCheckout}
+              >
+                {releasingQrCheckout ? "Melepas..." : "Lepas kunci"}
+              </Button>
+            </div>
+          )}
+          {menu.length === 0 ? (
+            <p className="p-4 text-muted-foreground">
+              Belum ada menu. Tambahkan item di halaman Menu.
+            </p>
+          ) : (
+            <div className="flex flex-1 flex-col overflow-hidden">
+              {/* Responsive header stack on small screens */}
+              <div className="flex flex-col gap-2 border-b px-3 py-2 sm:flex-row sm:items-center">
+                <div className="flex items-center gap-3">
+                  <QrOrderScannerDialog />
+                  <div className="relative flex-1 sm:hidden">
+                    <HugeiconsIcon
+                      icon={Search01Icon}
+                      size={16}
+                      color="currentColor"
+                      strokeWidth={1.5}
+                      className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                    />
+                    <Input
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Cari menu..."
+                      className="h-8 pl-8 text-sm"
+                    />
+                  </div>
+                </div>
+                <ScrollArea className="flex-1">
+                  <ButtonGroup>
                     <Button
-                      key={cat.id}
-                      variant={activeCategory === cat.id ? "default" : "outline"}
+                      variant={activeCategory === "all" ? "default" : "outline"}
                       size="sm"
-                      onClick={() => setActiveCategory(cat.id)}
+                      onClick={() => setActiveCategory("all")}
                     >
-                      {cat.name}
+                      Semua
                     </Button>
-                  ))}
-                </ButtonGroup>
-              </ScrollArea>
-              <div className="relative w-56 shrink-0">
-                <HugeiconsIcon
-                  icon={Search01Icon}
-                  size={16}
-                  color="currentColor"
-                  strokeWidth={1.5}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Cari menu..."
-                  className="pl-8"
-                />
+                    {menu.map((cat) => (
+                      <Button
+                        key={cat.id}
+                        variant={activeCategory === cat.id ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveCategory(cat.id)}
+                      >
+                        {cat.name}
+                      </Button>
+                    ))}
+                  </ButtonGroup>
+                </ScrollArea>
+                <div className="relative hidden w-48 shrink-0 sm:block lg:w-56">
+                  <HugeiconsIcon
+                    icon={Search01Icon}
+                    size={16}
+                    color="currentColor"
+                    strokeWidth={1.5}
+                    className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
+                  />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Cari menu..."
+                    className="pl-8"
+                  />
+                </div>
               </div>
-            </div>
-            <ScrollArea className="flex-1">
-              <div className="grid grid-cols-3 gap-2 p-3 sm:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-                {visibleItems.map((item) => {
-                  const inCart = cartQtyById.get(item.id) ?? 0;
-                  const remaining = item.stock - inCart;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => addItem(item)}
-                      disabled={remaining < 1}
-                      className="group flex flex-col overflow-hidden rounded-lg border text-left transition-colors hover:border-primary disabled:opacity-50"
-                    >
-                      <div className="relative aspect-square w-full bg-muted">
-                        {item.image ? (
-                          <Image
-                            src={item.image}
-                            alt={item.name}
-                            fill
-                            sizes="(max-width: 640px) 33vw, (max-width: 1024px) 25vw, 16vw"
-                            className="object-cover"
-                          />
-                        ) : null}
-                        {inCart > 0 && (
-                          <span className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-                            {inCart}
+              <ScrollArea className="flex-1">
+                <div className="grid grid-cols-3 gap-2 p-2 sm:grid-cols-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                  {visibleItems.map((item) => {
+                    const inCart = cartQtyById.get(item.id) ?? 0;
+                    const remaining = item.stock - inCart;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => addItem(item)}
+                        disabled={remaining < 1}
+                        className="group flex flex-col overflow-hidden rounded-lg border text-left transition-colors hover:border-primary disabled:opacity-50"
+                      >
+                        <div className="relative aspect-square w-full bg-muted">
+                          {item.image ? (
+                            <Image
+                              src={item.image}
+                              alt={item.name}
+                              fill
+                              loading="eager"
+                              sizes="(max-width: 640px) 33vw, (max-width: 768px) 25vw, (max-width: 1024px) 33vw, 20vw"
+                              className="object-cover"
+                            />
+                          ) : null}
+                          {inCart > 0 && (
+                            <span className="absolute right-1 top-1 flex size-5 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+                              {inCart}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-col p-1.5">
+                          <span className="line-clamp-1 text-sm font-medium leading-tight">
+                            {item.name}
                           </span>
-                        )}
-                      </div>
-                      <div className="flex flex-col p-1.5">
-                        <span className="line-clamp-1 text-sm font-medium leading-tight">
-                          {item.name}
-                        </span>
-                        <span className="text-xs font-medium text-primary">
-                          {rupiah(item.price)}
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          Sisa: {remaining}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                          <span className="text-xs font-medium text-primary">
+                            {rupiah(item.price)}
+                          </span>
+                          <span className="text-[11px] text-muted-foreground">
+                            Stok: {remaining}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScrollArea>
+            </div>
+          )}
+        </div>
+
+        <CartPanel
+          items={cart}
+          itemCount={itemCount}
+          customerName={customerName}
+          onCustomerNameChange={setCustomerName}
+          tableNumber={tableNumber}
+          onTableNumberChange={setTableNumber}
+          orderType={orderType}
+          onOrderTypeChange={setOrderType}
+          note={note}
+          onNoteChange={setNote}
+          discountPercent={discountPercent}
+          onDiscountPercentChange={setDiscountPercent}
+          paymentMethod={paymentMethod}
+          onPaymentMethodChange={setPaymentMethod}
+          paidAmount={paidAmount}
+          onPaidAmountChange={setPaidAmount}
+          subtotal={subtotal}
+          discountAmount={discountAmount}
+          tax={tax}
+          taxRate={taxRate}
+          taxEnabled={taxEnabled}
+          total={total}
+          change={change}
+          submitting={submitting}
+          canPrintLast={!!lastReceipt}
+          enableDraftOrders={enableDraftOrders}
+          holding={holding}
+          resumingDraftId={resumingDraftId}
+          onChangeQty={changeQty}
+          onSetNote={setItemNote}
+          onClear={reset}
+          onSubmit={handleSubmit}
+          onHold={handleHold}
+          onPrintLast={async () => {
+            if (!lastReceipt) return;
+            if (printer.connected) {
+              setPrinting(true);
+              try {
+                const data = buildReceipt(lastReceipt, store);
+                await printer.print(data);
+                toast.success("Struk terkirim ke printer");
+              } catch {
+                toast.error("Gagal mencetak struk");
+              }
+              setPrinting(false);
+            } else {
+              handlePrint();
+            }
+          }}
+          className="hidden lg:flex"
+        />
+
+        <div className="lg:hidden">
+          <Drawer
+            open={cartOpen}
+            onOpenChange={setCartOpen}
+            snapPoints={["100%", "70%", "45%"]}
+            showSwipeHandle={true}
+            swipeDirection="down"
+          >
+            <DrawerContent>
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+                <CartPanel
+                  items={cart}
+                  itemCount={itemCount}
+                  customerName={customerName}
+                  onCustomerNameChange={setCustomerName}
+                  tableNumber={tableNumber}
+                  onTableNumberChange={setTableNumber}
+                  orderType={orderType}
+                  onOrderTypeChange={setOrderType}
+                  note={note}
+                  onNoteChange={setNote}
+                  discountPercent={discountPercent}
+                  onDiscountPercentChange={setDiscountPercent}
+                  paymentMethod={paymentMethod}
+                  onPaymentMethodChange={setPaymentMethod}
+                  paidAmount={paidAmount}
+                  onPaidAmountChange={setPaidAmount}
+                  subtotal={subtotal}
+                  discountAmount={discountAmount}
+                  tax={tax}
+                  taxRate={taxRate}
+                  taxEnabled={taxEnabled}
+                  total={total}
+                  change={change}
+                  submitting={submitting}
+                  canPrintLast={!!lastReceipt}
+                  enableDraftOrders={enableDraftOrders}
+                  holding={holding}
+                  resumingDraftId={resumingDraftId}
+                  onChangeQty={changeQty}
+                  onSetNote={setItemNote}
+                  onClear={reset}
+                  onSubmit={handleSubmit}
+                  onHold={handleHold}
+                  onCloseCart={() => setCartOpen(false)}
+                  onPrintLast={async () => {
+                    if (!lastReceipt) return;
+                    if (printer.connected) {
+                      setPrinting(true);
+                      try {
+                        const data = buildReceipt(lastReceipt, store);
+                        await printer.print(data);
+                        toast.success("Struk terkirim ke printer");
+                      } catch {
+                        toast.error("Gagal mencetak struk");
+                      }
+                      setPrinting(false);
+                    } else {
+                      handlePrint();
+                    }
+                  }}
+                  className="w-full border-l-0 shrink! min-h-0"
+                />
               </div>
-            </ScrollArea>
-          </div>
+            </DrawerContent>
+          </Drawer>
+        </div>
+
+        {/* FAB floating cart button */}
+        {itemCount > 0 && !cartOpen && (
+          <button
+            onClick={() => setCartOpen(true)}
+            className="fixed bottom-6 right-6 z-30 flex size-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition-transform active:scale-95 hover:brightness-110 lg:hidden"
+            aria-label="Buka keranjang"
+          >
+            <HugeiconsIcon icon={ShoppingBag01Icon} size={24} color="currentColor" strokeWidth={1.5} />
+            <span className="absolute -right-1 -top-1 flex size-6 items-center justify-center rounded-full bg-destructive text-xs font-bold text-destructive-foreground ring-2 ring-background">
+              {itemCount}
+            </span>
+          </button>
         )}
       </div>
-
-      <CartPanel
-        items={cart}
-        itemCount={itemCount}
-        customerName={customerName}
-        onCustomerNameChange={setCustomerName}
-        tableNumber={tableNumber}
-        onTableNumberChange={setTableNumber}
-        orderType={orderType}
-        onOrderTypeChange={setOrderType}
-        note={note}
-        onNoteChange={setNote}
-        discountPercent={discountPercent}
-        onDiscountPercentChange={setDiscountPercent}
-        paymentMethod={paymentMethod}
-        onPaymentMethodChange={setPaymentMethod}
-        paidAmount={paidAmount}
-        onPaidAmountChange={setPaidAmount}
-        subtotal={subtotal}
-        discountAmount={discountAmount}
-        tax={tax}
-        taxRate={taxRate}
-        taxEnabled={taxEnabled}
-        total={total}
-        change={change}
-        submitting={submitting}
-        canPrintLast={!!lastReceipt}
-        enableDraftOrders={enableDraftOrders}
-        holding={holding}
-        resumingDraftId={resumingDraftId}
-        onChangeQty={changeQty}
-        onSetNote={setItemNote}
-        onClear={reset}
-        onSubmit={handleSubmit}
-        onHold={handleHold}
-        onPrintLast={async () => {
-          if (!lastReceipt) return;
-          if (printer.connected) {
-            setPrinting(true);
-            try {
-              const data = buildReceipt(lastReceipt, store);
-              await printer.print(data);
-              toast.success("Struk terkirim ke printer");
-            } catch {
-              toast.error("Gagal mencetak struk");
-            }
-            setPrinting(false);
-          } else {
-            handlePrint();
-          }
-        }}
-      />
 
       <QrOrderSheet
         open={qrOrderSheetOpen}
@@ -743,6 +867,6 @@ export function PosTerminal({
         </div>
       )}
 
-    </div>
+    </>
   );
 }

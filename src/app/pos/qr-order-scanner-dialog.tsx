@@ -1,9 +1,11 @@
-"use client";
+﻿"use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { claimQrCheckoutAction, claimQrOrderByNumberAction } from "./actions";
 import { isCheckoutScannerPayload } from "./qr-scanner-payload";
+import { HugeiconsIcon } from "@hugeicons/react";
+import { QrCodeScanIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -226,8 +228,9 @@ export function QrOrderScannerDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button variant="outline" />}>
-        Scan QR Pesanan
+      <DialogTrigger render={<Button variant="outline" size="icon" />}>
+        <span className="sr-only">Scan QR Pesanan</span>
+        <HugeiconsIcon icon={QrCodeScanIcon} size={20} color="currentColor" strokeWidth={1.5} />
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

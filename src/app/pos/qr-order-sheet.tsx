@@ -81,13 +81,13 @@ export function QrOrderSheet({
             Pilih pesanan untuk diproses di kasir.
           </SheetDescription>
         </SheetHeader>
-        <div className="relative px-3 pb-2">
+        <div className="relative px-1 pt-1">
           <HugeiconsIcon
             icon={Search01Icon}
             size="16"
             color="currentColor"
             strokeWidth={1.5}
-            className="pointer-events-none absolute left-6 top-1/3 -translate-y-1/2 text-muted-foreground"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground"
           />
           <input
             value={searchQuery}
