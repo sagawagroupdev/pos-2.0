@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState, useRef, useTransition } from "react";
+import { useState, useRef, useTransition, useCallback } from "react";
 import Image from "next/image";
 import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
@@ -51,8 +51,64 @@ function PrintableQr({
   );
 }
 
+function downloadQrImage(table: TableRow) {
+  const W = 400;
+  const QR_SIZE = 320;
+  const PADDING = 40;
+  const HEADER_Y = 52;
+  const QR_X = (W - QR_SIZE) / 2;
+  const QR_Y = 90;
+  const FOOTER_Y = QR_Y + QR_SIZE + 48;
+  const H = FOOTER_Y + 64;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+
+  // White background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  // -- SCAN FOR ORDER title --
+  ctx.fillStyle = "#111111";
+  ctx.font = 'bold 32px Inter, "Segoe UI", system-ui, sans-serif';
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("SCAN FOR ORDER", W / 2, HEADER_Y);
+
+  // Separator line
+  ctx.strokeStyle = "#e5e7eb";
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(PADDING, HEADER_Y + 18);
+  ctx.lineTo(W - PADDING, HEADER_Y + 18);
+  ctx.stroke();
+
+  // -- QR code --
+  const img = new window.Image();
+  img.onload = () => {
+    ctx.drawImage(img, QR_X, QR_Y, QR_SIZE, QR_SIZE);
+
+    // -- Table number --
+    ctx.fillStyle = "#111111";
+    ctx.font = 'bold 48px Inter, "Segoe UI", system-ui, sans-serif';
+    ctx.fillText(`TABLE ${table.number}`, W / 2, FOOTER_Y);
+
+    // Trigger download
+    const link = document.createElement("a");
+    link.download = `qr-table-${table.number}.png`;
+    link.href = canvas.toDataURL("image/png");
+    link.click();
+  };
+  img.onerror = () => toast.error("Gagal memuat QR code");
+  img.crossOrigin = "anonymous";
+  img.src = table.qrDataUrl;
+}
+
 function TableCard({ table }: { table: TableRow }) {
   const [pending, startTransition] = useTransition();
+  const [downloading, setDownloading] = useState(false);
   const printRef = useRef<HTMLDivElement>(null);
   const handlePrint = useReactToPrint({ contentRef: printRef });
 
@@ -64,6 +120,17 @@ function TableCard({ table }: { table: TableRow }) {
       else toast.error(res.error);
     });
   }
+
+  const handleDownload = useCallback(() => {
+    setDownloading(true);
+    setTimeout(() => {
+      try {
+        downloadQrImage(table);
+      } finally {
+        setDownloading(false);
+      }
+    }, 50);
+  }, [table]);
 
   return (
     <Card>
@@ -83,6 +150,14 @@ function TableCard({ table }: { table: TableRow }) {
       <CardFooter className="flex justify-center gap-2">
         <Button size="sm" variant="outline" onClick={() => handlePrint()}>
           Cetak
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={downloading}
+          onClick={handleDownload}
+        >
+          {downloading ? "Memproses..." : "Download"}
         </Button>
         <Button
           size="sm"

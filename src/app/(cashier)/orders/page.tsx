@@ -1,6 +1,14 @@
+﻿import dynamic from "next/dynamic";
 import { requireRole } from "@/lib/session";
 import { prisma } from "@/lib/db";
-import { OrdersView, type OrderRow } from "./orders-view";
+import type { OrderRow } from "./orders-view";
+
+const OrdersView = dynamic(
+  () => import("./orders-view").then((m) => ({ default: m.OrdersView })),
+  {
+    loading: () => <div className="h-64 w-full rounded-xl bg-muted-foreground/15 animate-pulse" />,
+  }
+);
 
 function toRow(o: {
   id: string;

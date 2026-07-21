@@ -1,3 +1,4 @@
+﻿import dynamic from "next/dynamic";
 import { getRevenueSummary, getDailyRevenue } from "@/lib/reports";
 import {
   Card,
@@ -6,8 +7,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { RevenueChart } from "./revenue-chart";
 import { rupiah } from "@/lib/format";
+
+const RevenueChart = dynamic(
+  () => import("./revenue-chart").then((m) => ({ default: m.RevenueChart })),
+  {
+    ssr: false,
+    loading: () => <div className="h-64 w-full rounded-xl bg-muted-foreground/15 animate-pulse" />,
+  }
+);
 
 export default async function DashboardPage() {
   const [summary, daily] = await Promise.all([
@@ -17,7 +25,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1>Dashboard</h1>
+      <h1 className="text-2xl font-semibold">Dashboard</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
