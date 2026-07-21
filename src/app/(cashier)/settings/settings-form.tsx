@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -255,12 +255,12 @@ export function SettingsForm({
         </CardContent>
       </Card>
 
-      {/* Pengaturan global — tax, QRIS, printer */}
+      {/* Pengaturan global — pajak, draft orders */}
       <form action={handleSaveSettings}>
         <Card>
           <CardHeader>
             <CardTitle>Pajak</CardTitle>
-            <CardDescription>Tarif pajak diterapkan ke transaksi.</CardDescription>
+            <CardDescription>PB1 diterapkan ke transaksi.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             <label className="flex items-center gap-3 text-sm">
@@ -269,20 +269,18 @@ export function SettingsForm({
                 checked={taxEnabled}
                 onCheckedChange={setTaxEnabled}
               />
-              Aktifkan pajak
+              Aktifkan PB1 10%
             </label>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="taxRate">Tarif Pajak (%)</Label>
-              <Input
-                id="taxRate"
-                name="taxRate"
-                type="number"
-                min={0}
-                max={100}
-                step="0.1"
-                defaultValue={settings.taxRate}
-              />
-            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Printer</CardTitle>
+            <CardDescription>Koneksi printer thermal Bluetooth.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <BlePrinterStatus />
           </CardContent>
         </Card>
 
@@ -302,70 +300,6 @@ export function SettingsForm({
               />
               Aktifkan pesanan draft (tahan order)
             </label>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Pembayaran QRIS</CardTitle>
-            <CardDescription>
-              Gambar QRIS statis yang ditampilkan ke pelanggan.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            {settings.qrisImageUrl && (
-              <Image
-                src={settings.qrisImageUrl}
-                alt="QRIS"
-                width={160}
-                height={160}
-                className="size-40 rounded object-contain"
-              />
-            )}
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="qrisImage">Gambar QRIS</Label>
-              <Input
-                id="qrisImage"
-                name="qrisImage"
-                type="file"
-                accept="image/*"
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Struk & Printer</CardTitle>
-            <CardDescription>Konfigurasi cetak struk thermal.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="receiptFooter">Pesan Penutup Struk</Label>
-              <Input
-                id="receiptFooter"
-                name="receiptFooter"
-                defaultValue={settings.receiptFooter ?? ""}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="printerName">Nama Printer</Label>
-              <Input
-                id="printerName"
-                name="printerName"
-                defaultValue={settings.printerName ?? ""}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="paperSize">Ukuran Kertas</Label>
-              <Input
-                id="paperSize"
-                name="paperSize"
-                defaultValue={settings.paperSize ?? "58mm"}
-              />
-            </div>
-
-            <BlePrinterStatus />
           </CardContent>
         </Card>
 
