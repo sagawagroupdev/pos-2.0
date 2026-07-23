@@ -44,12 +44,19 @@ export default async function MenuPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Kelola Menu</h1>
       <Tabs defaultValue="items">
-        <TabsList>
-          <TabsTrigger value="items">Item</TabsTrigger>
-          <TabsTrigger value="categories">Kategori</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between gap-4">
+          <div className="min-w-0 shrink-0">
+            <h1 className="text-2xl font-bold tracking-tight">Menu</h1>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Kelola daftar menu dan kategori
+            </p>
+          </div>
+          <TabsList>
+            <TabsTrigger value="items">Menu</TabsTrigger>
+            <TabsTrigger value="categories">Kategori</TabsTrigger>
+          </TabsList>
+        </div>
         <TabsContent value="items">
           <ItemManager items={itemRows} categories={categoryOptions} />
         </TabsContent>

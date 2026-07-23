@@ -55,6 +55,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { rupiah } from "@/lib/format";
 
 export type ItemRow = {
@@ -329,6 +339,7 @@ export function ItemManager({
   const [pending, startTransition] = useTransition();
   const [createOpen, setCreateOpen] = useState(false);
   const [editing, setEditing] = useState<ItemRow | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ItemRow | null>(null);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [page, setPage] = useState(1);
@@ -392,12 +403,13 @@ export function ItemManager({
     });
   }
 
-  function handleDelete(id: string) {
-    if (!confirm("Hapus item ini?")) return;
+  function confirmDelete() {
+    if (!deleteTarget) return;
     startTransition(async () => {
-      const res = await deleteItem(id);
+      const res = await deleteItem(deleteTarget.id);
       if (res.ok) toast.success("Item dihapus");
       else toast.error(res.error);
+      setDeleteTarget(null);
     });
   }
 
@@ -579,13 +591,12 @@ export function ItemManager({
                             <Button
                               size="icon"
                               variant="ghost"
-                              className="text-cyan-500 bg-cyan-100"
                               onClick={() => setEditing(item)}
                             >
                               <HugeiconsIcon
                                 icon={Edit02Icon}
                                 size={16}
-                                color="cyan"
+                                color="currentColor"
                               />
                             </Button>
                           }
@@ -599,10 +610,9 @@ export function ItemManager({
                               size="icon"
                               variant="destructive"
                               disabled={pending}
-                              onClick={() => handleDelete(item.id)}
+                              onClick={() => setDeleteTarget(item)}
                             >
                               <HugeiconsIcon
-
                                 icon={Delete02Icon}
                                 size={16}
                                 color="currentColor"
@@ -677,6 +687,35 @@ export function ItemManager({
           )}
         </Table>
       </div>
+
+      {/* Delete AlertDialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Item</AlertDialogTitle>
+            <AlertDialogDescription>
+              Yakin ingin menghapus <strong>{deleteTarget?.name}</strong>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel render={<Button variant="outline">Batal</Button>} />
+            <AlertDialogAction
+              render={
+                <Button
+                  variant="destructive"
+                  disabled={pending}
+                  onClick={confirmDelete}
+                >
+                  {pending ? "Menghapus..." : "Hapus"}
+                </Button>
+              }
+            />
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Edit Drawer */}
       <Drawer

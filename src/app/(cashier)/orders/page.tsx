@@ -84,7 +84,6 @@ export default async function OrdersPage() {
 
   return (
     <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-semibold">Riwayat Pesanan</h1>
       <OrdersView
         orders={active.map(toRow)}
         deletedOrders={deleted.map(toRow)}
