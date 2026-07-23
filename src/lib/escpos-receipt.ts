@@ -89,9 +89,11 @@ function itemsBlock(data: ReceiptData): Uint8Array[] {
   lines.push(rule("="));
 
   for (const item of data.items) {
-    // Nama barang (max 22 chars — sisanya "..")
+    const label = item.itemNote
+      ? item.name + " (" + item.itemNote + ")"
+      : item.name;
     const name =
-      item.name.length > 22 ? item.name.slice(0, 22) + ".." : item.name;
+      label.length > 22 ? label.slice(0, 22) + ".." : label;
     lines.push(txt(pad(name)));
     // Sub-line: qty × harga  →  subtotal
     const qtyLine =

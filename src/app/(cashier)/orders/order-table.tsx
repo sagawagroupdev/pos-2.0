@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { ArrowLeft01Icon, ArrowRight01Icon, Delete01Icon, PrinterIcon } from "@hugeicons/core-free-icons";
+import { Delete02Icon, PrinterIcon, ArrowLeft01Icon, ArrowRight01Icon } from "@hugeicons/core-free-icons";
 import {
   Table,
   TableBody,
@@ -52,6 +52,7 @@ export function OrderTable({
             <TableHead>Sumber</TableHead>
             <TableHead>Customer</TableHead>
             <TableHead>Total</TableHead>
+            <TableHead>Pembayaran</TableHead>
             <TableHead>Status</TableHead>
             <TableHead className="w-24">Aksi</TableHead>
           </TableRow>
@@ -59,7 +60,7 @@ export function OrderTable({
         <TableBody>
           {paginated.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={7} className="text-center text-muted-foreground">
+              <TableCell colSpan={8} className="text-center text-muted-foreground">
                 Tidak ada pesanan
               </TableCell>
             </TableRow>
@@ -79,9 +80,18 @@ export function OrderTable({
                   })}
                 </TableCell>
                 <TableCell>{o.orderNumber}</TableCell>
-                <TableCell>{o.channel === "QR" ? "QR Table" : "Kasir"}</TableCell>
+                <TableCell>{o.channel === "QR" ? `Table ${o.tableNumber}` : "Kasir"}</TableCell>
                 <TableCell>{o.customerName ?? "-"}</TableCell>
                 <TableCell>{rupiah(o.total)}</TableCell>
+                <TableCell>
+                  {o.paymentMethod === "CASH"
+                    ? "Cash"
+                    : o.paymentMethod === "CARD"
+                      ? "Kartu"
+                      : o.paymentMethod === "QRIS"
+                        ? "QRIS"
+                        : "-"}
+                </TableCell>
                 <TableCell>
                   <StatusBadge status={o.status} />
                 </TableCell>
@@ -98,12 +108,12 @@ export function OrderTable({
                     {!isAwaitingPaymentStatus(o.status) && !o.deletedAt && (
                       <Button
                         size="sm"
-                        variant="ghost"
+                        variant="destructive"
                         className="text-destructive hover:text-destructive"
                         title="Hapus"
                         onClick={() => onDelete(o)}
                       >
-                        <HugeiconsIcon icon={Delete01Icon} color="currentColor" className="size-4" />
+                        <HugeiconsIcon icon={Delete02Icon} color="currentColor" className="size-4" />
                       </Button>
                     )}
                   </div>
@@ -115,7 +125,7 @@ export function OrderTable({
         {orders.length > PAGE_SIZE && (
           <TableFooter>
             <TableRow>
-              <TableCell colSpan={7} className="px-4 py-2">
+              <TableCell colSpan={8} className="px-4 py-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground">
                     {from}-{to} dari {orders.length}

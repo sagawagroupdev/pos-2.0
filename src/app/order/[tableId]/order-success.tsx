@@ -10,7 +10,6 @@ import { useOrderRealtime } from "@/lib/order-realtime";
 
 export function OrderSuccess({
   checkoutToken,
-  orderNumber,
   status,
   tableNumber,
   onOrderAgain,
@@ -69,44 +68,6 @@ export function OrderSuccess({
               <p className="text-xs text-muted-foreground">
                 Kasir akan meninjau pesanan, mengonfirmasi pembayaran, lalu menyelesaikan pesanan anda.
               </p>
-              <details className="w-full max-w-65">
-                <summary className="cursor-pointer text-xs text-primary">
-                  Input manual — No. Pesanan
-                </summary>
-                <div className="mt-1.5 flex gap-1.5">
-                  <input
-                    readOnly
-                    value={orderNumber ?? ""}
-                    className="min-w-0 flex-1 rounded-md border bg-muted px-2 py-1 text-xs font-mono text-muted-foreground"
-                    onClick={(e) => e.currentTarget.select()}
-                  />
-                  <button
-                    className="shrink-0 rounded-md border px-2 py-1 text-xs hover:bg-muted"
-                    onClick={() => orderNumber && navigator.clipboard.writeText(orderNumber)}
-                  >
-                    Salin
-                  </button>
-                </div>
-                <details className="mt-1">
-                  <summary className="cursor-pointer text-[10px] text-muted-foreground">
-                    Payload mentah jika perlu
-                  </summary>
-                  <div className="mt-1 flex gap-1">
-                    <input
-                      readOnly
-                      value={`${CHECKOUT_QR_PREFIX}${checkoutToken}`}
-                      className="min-w-0 flex-1 rounded border bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
-                      onClick={(e) => e.currentTarget.select()}
-                    />
-                    <button
-                      className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] hover:bg-muted"
-                      onClick={() => navigator.clipboard.writeText(`${CHECKOUT_QR_PREFIX}${checkoutToken}`)}
-                    >
-                      Salin
-                    </button>
-                  </div>
-                </details>
-              </details>
             </div>
           )}
 

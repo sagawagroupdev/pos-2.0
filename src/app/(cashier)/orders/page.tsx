@@ -1,6 +1,7 @@
-﻿import dynamic from "next/dynamic";
+import dynamic from "next/dynamic";
 import { requireRole } from "@/lib/session";
 import { prisma } from "@/lib/db";
+import { getCashierOutlet, getSettings } from "@/lib/settings";
 import type { OrderRow } from "./orders-view";
 
 const OrdersView = dynamic(
@@ -9,6 +10,12 @@ const OrdersView = dynamic(
     loading: () => <div className="h-64 w-full rounded-xl bg-muted-foreground/15 animate-pulse" />,
   }
 );
+
+const WIB_OFFSET = 7 * 60 * 60 * 1000; // UTC+7
+
+function toWibISO(date: Date): string {
+  return new Date(date.getTime() + WIB_OFFSET).toISOString();
+}
 
 function toRow(o: {
   id: string;
@@ -37,7 +44,7 @@ function toRow(o: {
   return {
     id: o.id,
     orderNumber: o.orderNumber,
-    transactionDate: o.transactionDate.toISOString(),
+    transactionDate: toWibISO(o.transactionDate),
     channel: o.channel,
     type: o.type,
     status: o.status,
@@ -53,7 +60,7 @@ function toRow(o: {
     total: o.total,
     paidAmount: o.paidAmount,
     changeAmount: o.changeAmount,
-    deletedAt: o.deletedAt?.toISOString() ?? null,
+    deletedAt: o.deletedAt ? toWibISO(o.deletedAt) : null,
     deleteReason: o.deleteReason,
     items: o.items.map((it) => ({
       name: it.name,
@@ -67,7 +74,7 @@ function toRow(o: {
 export default async function OrdersPage() {
   const session = await requireRole("CASHIER");
 
-  const [active, deleted] = await Promise.all([
+  const [active, deleted, outlet, settings] = await Promise.all([
     prisma.order.findMany({
       where: { cashierId: session.user.id, deletedAt: null },
       orderBy: { transactionDate: "desc" },
@@ -80,6 +87,8 @@ export default async function OrdersPage() {
       take: 100,
       include: { items: true, cashier: { select: { name: true } } },
     }),
+    getCashierOutlet(session.user.id),
+    getSettings(),
   ]);
 
   return (
@@ -87,6 +96,12 @@ export default async function OrdersPage() {
       <OrdersView
         orders={active.map(toRow)}
         deletedOrders={deleted.map(toRow)}
+        store={{
+          storeName: outlet.outletName,
+          address: outlet.outletAddress,
+          phone: outlet.outletPhone,
+          receiptFooter: settings.receiptFooter,
+        }}
       />
     </div>
   );

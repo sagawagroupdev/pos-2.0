@@ -14,8 +14,8 @@ import { rupiah } from "@/lib/format";
 import type { OrderRow } from "./types";
 
 const TYPE_LABEL: Record<OrderRow["type"], string> = {
-  DINE_IN: "Makan di tempat",
-  TAKE_AWAY: "Bawa pulang",
+  DINE_IN: "Dine In",
+  TAKE_AWAY: "Take Away",
 };
 
 function InfoRow({ label, value }: { label: string; value: string }) {
@@ -55,29 +55,25 @@ export function OrderDetailDialog({
         {order && (
           <div className="flex flex-1 flex-col gap-4 overflow-y-auto px-4 py-4 text-sm">
             <div className="flex items-center justify-between">
-              <span className="font-mono text-base font-semibold">
-                {order.orderNumber}
-              </span>
               <StatusBadge status={order.status} />
             </div>
 
             <div className="flex flex-col gap-1.5 rounded-lg border p-3">
-              <InfoRow label="Trx ID" value={order.id} />
+              <InfoRow label="Trx ID" value={order.orderNumber} />
               <InfoRow
                 label="Sumber"
                 value={order.channel === "QR" ? "QR Table" : "Kasir"}
               />
-              <InfoRow label="Kasir" value={order.cashierName ?? "-"} />
-              <InfoRow label="Pelanggan" value={order.customerName ?? "-"} />
+              <InfoRow label="Cashier" value={order.cashierName ?? "-"} />
+              <InfoRow label="Customer" value={order.customerName ?? "-"} />
               {order.customerPhone && (
-                <InfoRow label="No. Telepon" value={order.customerPhone} />
+                <InfoRow label="No. Telp" value={order.customerPhone} />
               )}
               {order.channel === "QR" && (
-                <InfoRow label="No. Meja" value={order.tableNumber ?? "-"} />
+                <InfoRow label="Table Number" value={order.tableNumber ?? "-"} />
               )}
-              <InfoRow label="Tipe" value={TYPE_LABEL[order.type]} />
-              <InfoRow label="Pembayaran" value={order.paymentMethod ?? "-"} />
-              {order.note && <InfoRow label="Catatan" value={order.note} />}
+              <InfoRow label="Type" value={TYPE_LABEL[order.type]} />
+              <InfoRow label="Payment Method" value={order.paymentMethod ?? "-"} />
             </div>
 
             <div className="flex flex-col gap-1">
@@ -93,6 +89,15 @@ export function OrderDetailDialog({
               ))}
             </div>
 
+            {order.note && (
+              <div className="flex flex-col gap-1">
+                <span className="font-medium">Note</span>
+                <div className="min-h-15 w-full rounded-lg border border-border p-2.5 text-sm">
+                  {order.note}
+                </div>
+              </div>
+            )}
+
             <div className="flex flex-col gap-1 border-t pt-2">
               <div className="flex justify-between">
                 <span>Subtotal</span>
@@ -100,13 +105,13 @@ export function OrderDetailDialog({
               </div>
               {order.discount > 0 && (
                 <div className="flex justify-between">
-                  <span>Diskon</span>
+                  <span>Discount</span>
                   <span>-{rupiah(order.discount)}</span>
                 </div>
               )}
               {order.tax > 0 && (
                 <div className="flex justify-between">
-                  <span>Pajak</span>
+                  <span>PB1</span>
                   <span>{rupiah(order.tax)}</span>
                 </div>
               )}
@@ -115,12 +120,12 @@ export function OrderDetailDialog({
                 <span>{rupiah(order.total)}</span>
               </div>
               <div className="flex justify-between">
-                <span>Bayar ({order.paymentMethod ?? "-"})</span>
+                <span>Paid ({order.paymentMethod ?? "-"})</span>
                 <span>{rupiah(order.paidAmount)}</span>
               </div>
               {order.changeAmount > 0 && (
                 <div className="flex justify-between">
-                  <span>Kembali</span>
+                  <span>Change</span>
                   <span>{rupiah(order.changeAmount)}</span>
                 </div>
               )}

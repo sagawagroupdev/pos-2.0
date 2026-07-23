@@ -374,13 +374,13 @@ export function PosTerminal({
     });
   }
 
-  // Print receipt via BLE â€” fire & forget, never blocks the submit flow
+  // Print receipt via BLE   fire & forget, never blocks the submit flow
   function printToBle(data: Receipt58mmData) {
     if (!printer.connected) return;
     setPrinting(true);
     const bytes = buildReceipt(data, store);
     printer.print(bytes)
-      .catch(() => {}) // silent fail â€” printing is best-effort
+      .catch(() => {}) // silent fail   printing is best-effort
       .finally(() => setPrinting(false));
   }
 
@@ -403,6 +403,7 @@ export function PosTerminal({
         name: c.name,
         quantity: c.quantity,
         price: c.price,
+        itemNote: c.note || null,
       })),
       subtotal,
       discount: discountAmount,
@@ -443,7 +444,7 @@ export function PosTerminal({
       reset();
       setCartOpen(false);
 
-      // Print is fire-and-forget â€” doesn't block reset() or cause stuck state
+      // Print is fire-and-forget   doesn't block reset() or cause stuck state
       printToBle(receipt);
     }
 
@@ -519,8 +520,8 @@ export function PosTerminal({
                 <p className="font-semibold">QR Table checkout</p>
                 <p className="truncate text-xs text-muted-foreground">
                   {qrCheckout.orderNumber}
-                  {qrCheckout.customerName ? ` Â· ${qrCheckout.customerName}` : ""}
-                  {qrCheckout.tableNumber ? ` Â· Meja ${qrCheckout.tableNumber}` : ""}
+                  {qrCheckout.customerName ? `· ${qrCheckout.customerName}` : ""}
+                  {qrCheckout.tableNumber ? `· Meja ${qrCheckout.tableNumber}` : ""}
                 </p>
               </div>
               <Button

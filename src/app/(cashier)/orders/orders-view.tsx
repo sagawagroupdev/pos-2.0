@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -53,14 +53,17 @@ function toReceiptData(o: OrderRow): Receipt58mmData {
 export function OrdersView({
   orders,
   deletedOrders,
+  store,
 }: {
   orders: OrderRow[];
   deletedOrders: OrderRow[];
+  store: Receipt58mmStore;
 }) {
   const router = useRouter();
   const printer = usePrinter();
   const receiptRef = useRef<HTMLDivElement>(null);
   const [pending, startTransition] = useTransition();
+  const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [dateFilter, setDateFilter] = useState(todayStr);
   const [selected, setSelected] = useState<OrderRow | null>(null);
@@ -68,13 +71,6 @@ export function OrdersView({
   const [printData, setPrintData] = useState<Receipt58mmData | null>(null);
 
   const handlePrint = useReactToPrint({ contentRef: receiptRef });
-
-  const receiptStore: Receipt58mmStore = {
-    storeName: "Sagawa POS",
-    address: null,
-    phone: null,
-    receiptFooter: "Terima Kasih",
-  };
 
   function handleContinue(id: string) {
     router.push(`/pos?resume=${id}`);
@@ -116,7 +112,7 @@ export function OrdersView({
   function handlePrintOrder(order: OrderRow) {
     const data = toReceiptData(order);
     setPrintData(data);
-    const bytes = buildReceipt(data, receiptStore);
+    const bytes = buildReceipt(data, store);
 
     if (printer.connected) {
       printer.print(bytes).catch(() => {
@@ -127,13 +123,22 @@ export function OrdersView({
     }
   }
 
+  const q = searchQuery.toLowerCase().trim();
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
       if (dateFilter && o.transactionDate.slice(0, 10) !== dateFilter) return false;
+      if (q) {
+        const match =
+          o.orderNumber.toLowerCase().includes(q) ||
+          o.customerName?.toLowerCase().includes(q) ||
+          o.tableNumber?.toLowerCase().includes(q) ||
+          o.cashierName?.toLowerCase().includes(q);
+        if (!match) return false;
+      }
       return true;
     });
-  }, [orders, statusFilter, dateFilter]);
+  }, [orders, statusFilter, dateFilter, q]);
 
   return (
     <Tabs defaultValue="active" className="flex flex-col gap-4">
@@ -154,8 +159,10 @@ export function OrdersView({
       </div>
       <TabsContent value="active" className="flex flex-col gap-4">
         <OrderFilters
+          searchQuery={searchQuery}
           statusFilter={statusFilter}
           dateFilter={dateFilter}
+          onSearchChange={setSearchQuery}
           onStatusChange={setStatusFilter}
           onDateChange={setDateFilter}
         />
@@ -188,7 +195,7 @@ export function OrdersView({
           <Receipt58mm
             ref={receiptRef}
             data={printData}
-            store={receiptStore}
+            store={store}
           />
         )}
       </div>

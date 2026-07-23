@@ -109,8 +109,10 @@ export const Receipt58mm = forwardRef<HTMLDivElement, Receipt58mmProps>(
 
         {data.items.map((item, i) => (
           <div key={i}>
-            <div className="item-name">{item.name}</div>
-            {item.itemNote && <div className="item-note">{item.itemNote}</div>}
+            <div className="item-name">
+              {item.name}
+              {item.itemNote && <span className="item-note"> ({item.itemNote})</span>}
+            </div>
             <div className="row">
               <span className="qty-label">
                 {item.quantity}x {fmt(item.price)}

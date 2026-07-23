@@ -1,6 +1,6 @@
-"use client";
+﻿"use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -13,8 +13,11 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import { usePrinter } from "@/app/pos/printer-context";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
+  FullScreenIcon,
+  PrinterIcon,
   CashierIcon,
   DashboardSquare01Icon,
   File01Icon,
@@ -53,6 +56,22 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const printer = usePrinter();
+
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+
+  function toggleFullscreen() {
+    if (document.fullscreenElement) {
+      document.exitFullscreen();
+    } else {
+      document.documentElement.requestFullscreen();
+    }
+  }
 
   const currentItem = items.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
@@ -177,6 +196,30 @@ export function DashboardShell({
             </Button>
             <div className="w-px h-5 bg-border" />
             <h2 className="text-sm font-medium">{pageTitle}</h2>
+            <div className="ml-auto flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={printer.connected ? "Printer siap" : "Konek printer"}
+                onClick={printer.connected ? undefined : () => printer.connect()}
+                className="relative"
+              >
+                <HugeiconsIcon icon={PrinterIcon} size={18} color="currentColor" strokeWidth={1.5} />
+                <span
+                  className={`absolute -right-0.5 -top-0.5 size-2 rounded-full ring-2 ring-background ${
+                    printer.connected ? "bg-emerald-500" : "bg-red-500"
+                  }`}
+                />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+              >
+                <HugeiconsIcon icon={FullScreenIcon} size={18} color="currentColor" strokeWidth={1.5} />
+              </Button>
+            </div>
           </div>
           {/* Page content */}
           <div className="p-6 flex-1">{children}</div>
@@ -185,3 +228,4 @@ export function DashboardShell({
     </div>
   );
 }
+
