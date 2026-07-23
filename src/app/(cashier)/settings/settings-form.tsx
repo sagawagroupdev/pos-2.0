@@ -1,27 +1,16 @@
-﻿"use client";
+"use client";
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { toast } from "sonner";
 import { updateSettings, updateOutletInfo, updateBusinessHours } from "./actions";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { BlePrinterStatus } from "@/components/ble-printer-status";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { SettingsOutletTab } from "./settings-outlet-tab";
+import { SettingsJadwalTab } from "./settings-jadwal-tab";
+import { SettingsPengaturanTab } from "./settings-pengaturan-tab";
 import type { StoreSettings, CashierOutlet } from "@/lib/settings";
 import type { BusinessHours } from "@/lib/business-hours";
 import { getDefaultBusinessHours } from "@/lib/business-hours";
-
-const dayNames = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"];
 
 export function SettingsForm({
   settings,
@@ -113,202 +102,62 @@ export function SettingsForm({
     });
   }
 
-  function handleSaveSettings(formData: FormData) {
+  function handleAutoSave(field: string, value: boolean, label: string) {
     startTransition(async () => {
-      const res = await updateSettings(formData);
+      const fd = new FormData();
+      fd.set(field, value ? "on" : "off");
+      const res = await updateSettings(fd);
       if (res.ok) {
-        toast.success("Pengaturan disimpan");
+        toast.success(value ? `${label} diaktifkan` : `${label} dinonaktifkan`);
         router.refresh();
-      } else toast.error(res.error);
+      } else {
+        if (field === "taxEnabled") setTaxEnabled(!value);
+        if (field === "enableDraftOrders") setEnableDraftOrders(!value);
+        toast.error(res.error);
+      }
     });
   }
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* Informasi Outlet — per-cashier */}
-      <form action={handleSaveOutlet}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Informasi Outlet</CardTitle>
-            <CardDescription>
-              Data outlet Anda. Tampil di header struk dan halaman pemesanan QR.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="outletName">Nama Outlet</Label>
-              <Input
-                id="outletName"
-                name="outletName"
-                defaultValue={outlet.outletName}
-                required
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="outletAddress">Alamat</Label>
-              <Input
-                id="outletAddress"
-                name="outletAddress"
-                defaultValue={outlet.outletAddress ?? ""}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="outletPhone">No. Telepon</Label>
-              <Input
-                id="outletPhone"
-                name="outletPhone"
-                defaultValue={outlet.outletPhone ?? ""}
-              />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="outletLogo">Logo Outlet</Label>
-              {outlet.outletLogo && (
-                <Image
-                  src={outlet.outletLogo}
-                  alt="Logo"
-                  width={64}
-                  height={64}
-                  className="size-16 rounded object-contain"
-                />
-              )}
-              <Input
-                id="outletLogo"
-                name="outletLogo"
-                type="file"
-                accept="image/*"
-              />
-            </div>
-            <div>
-              <Button type="submit" disabled={pending} size="sm">
-                {pending ? "Menyimpan..." : "Simpan Outlet"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </form>
+    <Tabs defaultValue="outlet" className="w-full">
+      <TabsList className="w-full sm:w-auto">
+        <TabsTrigger value="outlet">Outlet</TabsTrigger>
+        <TabsTrigger value="jadwal">Jadwal</TabsTrigger>
+        <TabsTrigger value="pengaturan">Pengaturan umum</TabsTrigger>
+      </TabsList>
 
-      {/* Jam Operasional — per-cashier */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Jam Operasional</CardTitle>
-          <CardDescription>
-            Atur jam buka outlet setiap hari. Customer tidak bisa order di luar jam operasional.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {Array.from({ length: 7 }, (_, i) => {
-            const d = i + 1;
-            const day = businessHours[String(d)] ?? { mode: "24h" };
-            return (
-              <div key={d} className="flex flex-wrap items-center gap-2 rounded-lg border p-2.5">
-                <span className="w-16 text-sm font-medium">{dayNames[i]}</span>
-                <div className="flex gap-1">
-                  {(["hours", "24h", "closed"] as const).map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setDayMode(d, m)}
-                      className={`cursor-pointer rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                        day.mode === m
-                          ? m === "hours"
-                            ? "bg-primary text-primary-foreground"
-                            : m === "24h"
-                              ? "bg-emerald-500 text-white"
-                              : "bg-destructive text-destructive-foreground"
-                          : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                      }`}
-                    >
-                      {m === "hours" ? "Buka" : m === "24h" ? "24 Jam" : "Tutup"}
-                    </button>
-                  ))}
-                </div>
-                {day.mode === "hours" && (
-                  <div className="flex items-center gap-1.5">
-                    <input
-                      type="time"
-                      value={day.open ?? "08:00"}
-                      onChange={(e) => setDayTime(d, "open", e.target.value)}
-                      className="h-8 w-24 rounded-md border bg-background px-2 text-xs"
-                    />
-                    <span className="text-xs text-muted-foreground">—</span>
-                    <input
-                      type="time"
-                      value={day.close ?? "22:00"}
-                      onChange={(e) => setDayTime(d, "close", e.target.value)}
-                      className="h-8 w-24 rounded-md border bg-background px-2 text-xs"
-                    />
-                  </div>
-                )}
-              </div>
-            );
-          })}
-          <div className="mt-1">
-            <Button
-              type="button"
-              size="sm"
-              onClick={handleSaveHours}
-              disabled={hoursPending}
-            >
-              {hoursPending ? "Menyimpan..." : "Simpan Jam Operasional"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <TabsContent value="outlet">
+        <SettingsOutletTab
+          outlet={outlet}
+          pending={pending}
+          onSubmit={handleSaveOutlet}
+        />
+      </TabsContent>
 
-      {/* Pengaturan global — pajak, draft orders */}
-      <form action={handleSaveSettings}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Pajak</CardTitle>
-            <CardDescription>PB1 diterapkan ke transaksi.</CardDescription>
-          </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <label className="flex items-center gap-3 text-sm">
-              <Switch
-                name="taxEnabled"
-                checked={taxEnabled}
-                onCheckedChange={setTaxEnabled}
-              />
-              Aktifkan PB1 10%
-            </label>
-          </CardContent>
-        </Card>
+      <TabsContent value="jadwal">
+        <SettingsJadwalTab
+          businessHours={businessHours}
+          hoursPending={hoursPending}
+          onSetDayMode={setDayMode}
+          onSetDayTime={setDayTime}
+          onSave={handleSaveHours}
+        />
+      </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Printer</CardTitle>
-            <CardDescription>Koneksi printer thermal Bluetooth.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <BlePrinterStatus />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Pesanan Draft</CardTitle>
-            <CardDescription>
-              Izinkan kasir menahan pesanan untuk diselesaikan nanti.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <label className="flex items-center gap-3 text-sm">
-              <Switch
-                name="enableDraftOrders"
-                checked={enableDraftOrders}
-                onCheckedChange={setEnableDraftOrders}
-              />
-              Aktifkan pesanan draft (tahan order)
-            </label>
-          </CardContent>
-        </Card>
-
-        <div>
-          <Button type="submit" disabled={pending}>
-            {pending ? "Menyimpan..." : "Simpan Pengaturan"}
-          </Button>
-        </div>
-      </form>
-    </div>
+      <TabsContent value="pengaturan">
+        <SettingsPengaturanTab
+          taxEnabled={taxEnabled}
+          enableDraftOrders={enableDraftOrders}
+          onTaxToggle={(checked) => {
+            setTaxEnabled(checked);
+            handleAutoSave("taxEnabled", checked, "Pajak");
+          }}
+          onDraftToggle={(checked) => {
+            setEnableDraftOrders(checked);
+            handleAutoSave("enableDraftOrders", checked, "Pesanan draft");
+          }}
+        />
+      </TabsContent>
+    </Tabs>
   );
 }

@@ -1,10 +1,14 @@
-"use client";
+﻿"use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useReactToPrint } from "react-to-print";
 import { toast } from "sonner";
 import { discardDraft } from "@/app/pos/actions";
 import { deleteOrderHistory } from "./confirm-actions";
+import { usePrinter } from "@/app/pos/printer-context";
+import { buildReceipt } from "@/lib/escpos-receipt";
+import { Receipt58mm, type Receipt58mmData, type Receipt58mmStore } from "@/components/receipt";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderFilters } from "./order-filters";
 import { OrderTable } from "./order-table";
@@ -15,6 +19,37 @@ import type { OrderRow } from "./types";
 
 export type { OrderRow } from "./types";
 
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+function toReceiptData(o: OrderRow): Receipt58mmData {
+  return {
+    id: o.id,
+    orderNumber: o.orderNumber,
+    transactionDate: o.transactionDate,
+    cashierName: o.cashierName,
+    customerName: o.customerName,
+    tableNumber: o.tableNumber,
+    type: o.type,
+    paymentMethod: o.paymentMethod ?? "CASH",
+    note: o.note,
+    items: o.items.map((it) => ({
+      name: it.name,
+      quantity: it.quantity,
+      price: it.price,
+      itemNote: it.note,
+    })),
+    subtotal: o.subtotal,
+    discount: o.discount,
+    tax: o.tax,
+    total: o.total,
+    paidAmount: o.paidAmount,
+    changeAmount: o.changeAmount,
+  };
+}
+
 export function OrdersView({
   orders,
   deletedOrders,
@@ -23,17 +58,29 @@ export function OrdersView({
   deletedOrders: OrderRow[];
 }) {
   const router = useRouter();
+  const printer = usePrinter();
+  const receiptRef = useRef<HTMLDivElement>(null);
   const [pending, startTransition] = useTransition();
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [dateFilter, setDateFilter] = useState<string>("");
+  const [dateFilter, setDateFilter] = useState(todayStr);
   const [selected, setSelected] = useState<OrderRow | null>(null);
   const [toDelete, setToDelete] = useState<OrderRow | null>(null);
+  const [printData, setPrintData] = useState<Receipt58mmData | null>(null);
+
+  const handlePrint = useReactToPrint({ contentRef: receiptRef });
+
+  const receiptStore: Receipt58mmStore = {
+    storeName: "Sagawa POS",
+    address: null,
+    phone: null,
+    receiptFooter: "Terima Kasih",
+  };
 
   function handleContinue(id: string) {
     router.push(`/pos?resume=${id}`);
   }
 
-  function handleDelete(id: string) {
+  function handleDeleteDraft(id: string) {
     if (!confirm("Hapus pesanan tertahan ini?")) return;
     startTransition(async () => {
       const res = await discardDraft(id);
@@ -57,25 +104,54 @@ export function OrdersView({
     });
   }
 
+  function handleDeleteOrder(order: OrderRow) {
+    if (order.status === "DRAFT") {
+      if (!confirm("Hapus pesanan ini?")) return;
+      handleDeleteDraft(order.id);
+    } else {
+      setToDelete(order);
+    }
+  }
+
+  function handlePrintOrder(order: OrderRow) {
+    const data = toReceiptData(order);
+    setPrintData(data);
+    const bytes = buildReceipt(data, receiptStore);
+
+    if (printer.connected) {
+      printer.print(bytes).catch(() => {
+        requestAnimationFrame(() => handlePrint());
+      });
+    } else {
+      requestAnimationFrame(() => handlePrint());
+    }
+  }
+
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
-      if (dateFilter && o.transactionDate.slice(0, 10) !== dateFilter) {
-        return false;
-      }
+      if (dateFilter && o.transactionDate.slice(0, 10) !== dateFilter) return false;
       return true;
     });
   }, [orders, statusFilter, dateFilter]);
 
   return (
     <Tabs defaultValue="active" className="flex flex-col gap-4">
-      <TabsList>
-        <TabsTrigger value="active">Riwayat</TabsTrigger>
-        <TabsTrigger value="deleted">
-          Aktivitas Terhapus
-          {deletedOrders.length > 0 ? ` (${deletedOrders.length})` : ""}
-        </TabsTrigger>
-      </TabsList>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">Riwayat Pesanan</h1>
+          <p className="text-sm text-muted-foreground mt-1">
+            Lihat dan kelola riwayat pesanan
+          </p>
+        </div>
+        <TabsList>
+          <TabsTrigger value="active">Riwayat</TabsTrigger>
+          <TabsTrigger value="deleted">
+            Aktivitas Terhapus
+            {deletedOrders.length > 0 ? " (" + deletedOrders.length + ")" : ""}
+          </TabsTrigger>
+        </TabsList>
+      </div>
       <TabsContent value="active" className="flex flex-col gap-4">
         <OrderFilters
           statusFilter={statusFilter}
@@ -83,7 +159,12 @@ export function OrdersView({
           onStatusChange={setStatusFilter}
           onDateChange={setDateFilter}
         />
-        <OrderTable orders={filtered} onSelect={setSelected} />
+        <OrderTable
+          orders={filtered}
+          onSelect={setSelected}
+          onPrint={handlePrintOrder}
+          onDelete={handleDeleteOrder}
+        />
       </TabsContent>
       <TabsContent value="deleted">
         <DeletedOrderTable orders={deletedOrders} onSelect={setSelected} />
@@ -93,7 +174,7 @@ export function OrdersView({
         pending={pending}
         onOpenChange={(open) => !open && setSelected(null)}
         onContinue={handleContinue}
-        onDelete={handleDelete}
+        onDelete={handleDeleteDraft}
         onDeleteHistory={setToDelete}
       />
       <DeleteReasonDialog
@@ -102,6 +183,15 @@ export function OrdersView({
         onOpenChange={(open) => !open && setToDelete(null)}
         onConfirm={handleDeleteHistory}
       />
+      <div className="hidden">
+        {printData && (
+          <Receipt58mm
+            ref={receiptRef}
+            data={printData}
+            store={receiptStore}
+          />
+        )}
+      </div>
     </Tabs>
   );
 }

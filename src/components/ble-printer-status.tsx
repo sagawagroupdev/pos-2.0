@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -18,16 +18,10 @@ export function BlePrinterStatus() {
   } = usePrinter();
   const [connecting, setConnecting] = useState(false);
   const [printing, setPrinting] = useState(false);
-  const [browserOk, setBrowserOk] = useState(true);
-
-  useEffect(() => {
-    if (
-      typeof navigator === "undefined" ||
-      !navigator.bluetooth
-    ) {
-      setBrowserOk(false);
-    }
-  }, []);
+  const [browserOk] = useState(() => {
+    if (typeof navigator === "undefined") return false;
+    return "bluetooth" in navigator;
+  });
 
   const handleConnect = useCallback(async () => {
     setConnecting(true);
@@ -74,9 +68,8 @@ export function BlePrinterStatus() {
   const displayName = name ?? lastDeviceName;
 
   return (
-    <div className="flex flex-wrap items-center gap-3 rounded-lg border p-3">
+    <div className="flex flex-col items-center gap-2 rounded-lg py-2">
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium">Printer Bluetooth</span>
         <Badge
           variant={connected ? "default" : "secondary"}
           className={
@@ -85,15 +78,14 @@ export function BlePrinterStatus() {
               : undefined
           }
         >
-          {connected ? "Terhubung" : "Tidak terhubung"}
+          {connected ? "Connect" : "Disconnect"}
         </Badge>
+        {displayName && (
+          <span className="text-xs text-muted-foreground">
+            {displayName}
+          </span>
+        )}
       </div>
-
-      {displayName && (
-        <span className="text-xs text-muted-foreground">
-          {displayName}
-        </span>
-      )}
 
       <div className="flex gap-2">
         {connected ? (

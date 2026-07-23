@@ -10,9 +10,9 @@ import { uploadImage, deleteImage } from "@/lib/r2";
 export type ActionResult = { ok: boolean; error?: string };
 
 const settingsSchema = z.object({
-  taxRate: z.coerce.number().min(0).max(100, "Tarif pajak tidak valid"),
-  taxEnabled: z.boolean(),
-  enableDraftOrders: z.boolean(),
+  taxRate: z.coerce.number().min(0).max(100, "Tarif pajak tidak valid").optional(),
+  taxEnabled: z.boolean().optional(),
+  enableDraftOrders: z.boolean().optional(),
   receiptFooter: z.string().trim().optional(),
   printerName: z.string().trim().optional(),
   paperSize: z.string().trim().optional(),
@@ -28,12 +28,12 @@ export async function updateSettings(formData: FormData): Promise<ActionResult> 
   await requireUser();
 
   const parsed = settingsSchema.safeParse({
-    taxRate: formData.get("taxRate"),
-    taxEnabled: formData.get("taxEnabled") === "on",
-    enableDraftOrders: formData.get("enableDraftOrders") === "on",
-    receiptFooter: formData.get("receiptFooter"),
-    printerName: formData.get("printerName"),
-    paperSize: formData.get("paperSize"),
+    taxRate: formData.has("taxRate") ? formData.get("taxRate") : undefined,
+    taxEnabled: formData.has("taxEnabled") ? formData.get("taxEnabled") === "on" : undefined,
+    enableDraftOrders: formData.has("enableDraftOrders") ? formData.get("enableDraftOrders") === "on" : undefined,
+    receiptFooter: formData.has("receiptFooter") ? formData.get("receiptFooter") : undefined,
+    printerName: formData.has("printerName") ? formData.get("printerName") : undefined,
+    paperSize: formData.has("paperSize") ? formData.get("paperSize") : undefined,
   });
   if (!parsed.success) {
     return { ok: false, error: parsed.error.issues[0].message };
@@ -55,12 +55,12 @@ export async function updateSettings(formData: FormData): Promise<ActionResult> 
   await prisma.setting.update({
     where: { id: current.id },
     data: {
-      taxRate: parsed.data.taxRate,
-      taxEnabled: parsed.data.taxEnabled,
-      enableDraftOrders: parsed.data.enableDraftOrders,
-      receiptFooter: parsed.data.receiptFooter || null,
-      printerName: parsed.data.printerName || null,
-      paperSize: parsed.data.paperSize || "58mm",
+      ...(parsed.data.taxRate !== undefined && { taxRate: parsed.data.taxRate }),
+      ...(parsed.data.taxEnabled !== undefined && { taxEnabled: parsed.data.taxEnabled }),
+      ...(parsed.data.enableDraftOrders !== undefined && { enableDraftOrders: parsed.data.enableDraftOrders }),
+      ...(parsed.data.receiptFooter !== undefined && { receiptFooter: parsed.data.receiptFooter || null }),
+      ...(parsed.data.printerName !== undefined && { printerName: parsed.data.printerName || null }),
+      ...(parsed.data.paperSize !== undefined && { paperSize: parsed.data.paperSize || "58mm" }),
       qrisImageUrl,
     },
   });
