@@ -1,4 +1,3 @@
-﻿import dynamic from "next/dynamic";
 import { getRevenueSummary, getDailyRevenue } from "@/lib/reports";
 import {
   Card,
@@ -8,14 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { rupiah } from "@/lib/format";
-
-const RevenueChart = dynamic(
-  () => import("./revenue-chart").then((m) => ({ default: m.RevenueChart })),
-  {
-    ssr: false,
-    loading: () => <div className="h-64 w-full rounded-xl bg-muted-foreground/15 animate-pulse" />,
-  }
-);
+import { RevenueChartSSR } from "./revenue-chart-ssr";
 
 export default async function DashboardPage() {
   const [summary, daily] = await Promise.all([
@@ -60,7 +52,7 @@ export default async function DashboardPage() {
           <CardDescription>Total penjualan harian.</CardDescription>
         </CardHeader>
         <CardContent>
-          <RevenueChart data={daily} />
+          <RevenueChartSSR data={daily} />
         </CardContent>
       </Card>
     </div>
