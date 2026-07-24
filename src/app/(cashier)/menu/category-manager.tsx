@@ -199,6 +199,7 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
               <Input
                 id="edit-cat-name"
                 name="name"
+                key={editing?.id ?? "new"}
                 defaultValue={editing?.name}
                 required
               />

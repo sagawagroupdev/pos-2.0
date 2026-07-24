@@ -37,7 +37,6 @@ export function SettingsOutletTab({
         </CardHeader>
         <CardContent>
           <div className="grid gap-6 md:grid-cols-[160px_1fr]">
-            {/* Avatar-style logo upload */}
             <Label
               htmlFor="outletLogo"
               className="flex cursor-pointer flex-col items-center gap-3"

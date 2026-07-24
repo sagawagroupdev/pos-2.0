@@ -87,13 +87,20 @@ export function isOpenNow(hours: BusinessHours): { open: boolean; message?: stri
 export async function getCashierOutlet(userId: string): Promise<CashierOutlet> {
   const user = await prisma.user.findUniqueOrThrow({
     where: { id: userId },
-    select: { name: true, outletAddress: true, outletPhone: true, outletLogo: true },
+    select: {
+      name: true,
+      outletAddress: true,
+      outletPhone: true,
+      outletLogo: true,
+      partnership: { select: { logo: true } },
+      subPartnership: { select: { logo: true } },
+    },
   });
   return {
     outletName: user.name,
     outletAddress: user.outletAddress,
     outletPhone: user.outletPhone,
-    outletLogo: user.outletLogo,
+    outletLogo: user.outletLogo ?? user.subPartnership?.logo ?? user.partnership?.logo ?? null,
   };
 }
 

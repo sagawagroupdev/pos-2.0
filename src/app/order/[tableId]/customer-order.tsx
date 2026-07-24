@@ -239,6 +239,7 @@ export function CustomerOrder({
             <Image
               src="/assets/element/menus-vektor.svg"
               alt=""
+              loading="eager"
               width={240}
               height={220}
               className="h-auto w-full object-contain"
@@ -263,6 +264,7 @@ export function CustomerOrder({
               <Image
                 src="/assets/icon/dine-in.svg"
                 alt=""
+                loading="eager"
                 width={40}
                 height={40}
                 className="shrink-0"
@@ -285,6 +287,7 @@ export function CustomerOrder({
               <Image
                 src="/assets/icon/take-away.svg"
                 alt=""
+                loading="eager"
                 width={40}
                 height={40}
                 className="shrink-0"
@@ -322,7 +325,7 @@ export function CustomerOrder({
               src="/assets/img/bg-header.webp"
               fill
               alt=""
-              sizes=""
+              sizes="100vw"
               className="object-cover"
               priority
             />

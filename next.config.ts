@@ -19,6 +19,7 @@ if (r2PublicUrl) {
 
 const nextConfig: NextConfig = {
   images: { remotePatterns },
+  experimental: { serverActions: { bodySizeLimit: "4mb" } },
   async rewrites() {
     return [
       {
