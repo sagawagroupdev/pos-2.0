@@ -36,11 +36,11 @@ async function main() {
 
   await auth.api.createUser({
     body: {
-      username: "administrator",
       email: "admin@sagawagroup.id",
       password: "@sagawagroup222!",
       name: "Admin",
       role: "ADMIN",
+      data: { username: "administrator" },
     },
   });
 

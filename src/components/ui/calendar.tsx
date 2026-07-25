@@ -7,6 +7,8 @@ import {
   endOfMonth,
   endOfWeek,
   format,
+  isAfter,
+  isBefore,
   isSameDay,
   isSameMonth,
   isToday,
@@ -24,16 +26,19 @@ import { Button } from "@/components/ui/button"
 function Calendar({
   selected,
   onSelect,
+  range,
+  onSelectRange,
   className,
 }: {
   selected?: Date
-  onSelect: (date: Date) => void
+  onSelect?: (date: Date) => void
+  range?: { from?: Date; to?: Date }
+  onSelectRange?: (range: { from?: Date; to?: Date }) => void
   className?: string
 }) {
   const today = new Date()
-  const [displayMonth, setDisplayMonth] = React.useState(
-    selected ?? today
-  )
+  const initialDate = range?.from ?? selected ?? today
+  const [displayMonth, setDisplayMonth] = React.useState(initialDate)
 
   const monthStart = startOfMonth(displayMonth)
   const monthEnd = endOfMonth(displayMonth)
@@ -44,6 +49,25 @@ function Calendar({
 
   const DAYS_LABEL = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"]
 
+  const isRangeMode = !!onSelectRange
+
+  function handleDayClick(day: Date) {
+    if (isRangeMode && onSelectRange) {
+      const { from, to } = range ?? {}
+      if (!from || (from && to)) {
+        onSelectRange({ from: day, to: undefined })
+      } else {
+        if (isBefore(day, from)) {
+          onSelectRange({ from: day, to: from })
+        } else {
+          onSelectRange({ from, to: day })
+        }
+      }
+    } else if (onSelect) {
+      onSelect(day)
+    }
+  }
+
   function prev() {
     setDisplayMonth((m) => subMonths(m, 1))
   }
@@ -51,6 +75,10 @@ function Calendar({
   function next() {
     setDisplayMonth((m) => addMonths(m, 1))
   }
+
+  const rangeFrom = range?.from
+  const rangeTo = range?.to
+  const hasBothEnds = rangeFrom && rangeTo && !isSameDay(rangeFrom, rangeTo)
 
   return (
     <div className={cn("w-full", className)}>
@@ -86,17 +114,37 @@ function Calendar({
           const isCurrentMonth = isSameMonth(day, displayMonth)
           const isTodayDay = isToday(day)
 
+          const isRangeStart = rangeFrom && isSameDay(day, rangeFrom)
+          const isRangeEnd = rangeTo && isSameDay(day, rangeTo)
+          const inRange =
+            rangeFrom &&
+            rangeTo &&
+            !isRangeStart &&
+            !isRangeEnd &&
+            isAfter(day, rangeFrom) &&
+            isBefore(day, rangeTo)
+
           return (
             <Button
               key={day.toISOString()}
               size="icon-xs"
-              variant={isSelected ? "default" : "ghost"}
+              variant={
+                isRangeMode && (isRangeStart || isRangeEnd)
+                  ? "default"
+                  : !isRangeMode && isSelected
+                    ? "default"
+                    : "ghost"
+              }
               className={cn(
-                "h-7 w-full rounded text-xs font-normal aria-pressed:bg-primary aria-pressed:text-primary-foreground",
+                "h-7 w-full rounded text-xs font-normal",
                 !isCurrentMonth && "text-muted-foreground opacity-40",
-                isTodayDay && !isSelected && "border border-dashed border-foreground/30"
+                isTodayDay && !isSelected && !isRangeStart && !isRangeEnd && "border border-dashed border-foreground/30",
+                isRangeMode && (isRangeStart || isRangeEnd) && "bg-primary text-primary-foreground",
+                inRange && "bg-primary/10 rounded-none",
+                isRangeMode && isRangeStart && hasBothEnds && "rounded-l-full! rounded-r-none!",
+                isRangeMode && isRangeEnd && hasBothEnds && "rounded-r-full! rounded-l-none!",
               )}
-              onClick={() => onSelect(day)}
+              onClick={() => handleDayClick(day)}
             >
               {format(day, "d")}
             </Button>
