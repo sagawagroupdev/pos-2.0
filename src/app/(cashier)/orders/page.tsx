@@ -11,11 +11,7 @@ const OrdersView = dynamic(
   }
 );
 
-const WIB_OFFSET = 7 * 60 * 60 * 1000; // UTC+7
-
-function toWibISO(date: Date): string {
-  return new Date(date.getTime() + WIB_OFFSET).toISOString();
-}
+// ponytail: dates passed as raw UTC ISO strings; timezone formatting done client-side via formatInTz/dateStrInTz.
 
 function toRow(o: {
   id: string;
@@ -44,7 +40,7 @@ function toRow(o: {
   return {
     id: o.id,
     orderNumber: o.orderNumber,
-    transactionDate: toWibISO(o.transactionDate),
+    transactionDate: o.transactionDate.toISOString(),
     channel: o.channel,
     type: o.type,
     status: o.status,
@@ -60,7 +56,7 @@ function toRow(o: {
     total: o.total,
     paidAmount: o.paidAmount,
     changeAmount: o.changeAmount,
-    deletedAt: o.deletedAt ? toWibISO(o.deletedAt) : null,
+    deletedAt: o.deletedAt ? o.deletedAt.toISOString() : null,
     deleteReason: o.deleteReason,
     items: o.items.map((it) => ({
       name: it.name,

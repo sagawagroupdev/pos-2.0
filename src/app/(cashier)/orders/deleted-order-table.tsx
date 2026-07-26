@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { rupiah } from "@/lib/format";
+import { rupiah, formatInTz } from "@/lib/format";
 import type { OrderRow } from "./types";
 
 const PAGE_SIZE = 50;
@@ -65,7 +65,7 @@ export function DeletedOrderTable({
               >
                 <TableCell>
                   {o.deletedAt
-                    ? new Date(o.deletedAt).toLocaleString("id-ID", {
+                    ? formatInTz(o.deletedAt, {
                         day: "2-digit",
                         month: "2-digit",
                         hour: "2-digit",

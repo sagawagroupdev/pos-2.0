@@ -1,8 +1,7 @@
 "use client";
 
 import { useCallback } from "react";
-import { format, parseISO } from "date-fns";
-import { id as localeId } from "date-fns/locale";
+import { dateStrInTz, formatInTz } from "@/lib/format";
 import { CalendarIcon, Search01Icon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Input } from "@/components/ui/input";
@@ -35,10 +34,6 @@ function statusLabel(value: string): string {
 }
 
 
-function dateStr(date: Date): string {
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
-
 export function OrderFilters({
   searchQuery,
   statusFilter,
@@ -54,10 +49,10 @@ export function OrderFilters({
   onStatusChange: (value: string) => void;
   onDateChange: (value: string) => void;
 }) {
-  const selectedDate = dateFilter ? parseISO(dateFilter) : undefined;
+  const selectedDate = dateFilter ? new Date(dateFilter) : undefined;
 
   const handleSelect = useCallback(
-    (date: Date) => onDateChange(dateStr(date)),
+    (date: Date) => onDateChange(dateStrInTz(date)),
     [onDateChange],
   );
 
@@ -111,8 +106,10 @@ export function OrderFilters({
             >
               <span>
                 {dateFilter
-                  ? format(parseISO(dateFilter), "d MMM yyyy", {
-                      locale: localeId,
+                  ? formatInTz(dateFilter, {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
                     })
                   : "Pilih tanggal"}
               </span>

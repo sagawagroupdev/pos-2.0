@@ -15,14 +15,10 @@ import { OrderTable } from "./order-table";
 import { DeletedOrderTable } from "./deleted-order-table";
 import { OrderDetailDialog } from "./order-detail-dialog";
 import { DeleteReasonDialog } from "./delete-reason-dialog";
+import { todayStrInTz, dateStrInTz } from "@/lib/format";
 import type { OrderRow } from "./types";
 
 export type { OrderRow } from "./types";
-
-function todayStr() {
-  const d = new Date();
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-}
 
 function toReceiptData(o: OrderRow): Receipt58mmData {
   return {
@@ -65,7 +61,7 @@ export function OrdersView({
   const [pending, startTransition] = useTransition();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [dateFilter, setDateFilter] = useState(todayStr);
+  const [dateFilter, setDateFilter] = useState(todayStrInTz());
   const [selected, setSelected] = useState<OrderRow | null>(null);
   const [toDelete, setToDelete] = useState<OrderRow | null>(null);
   const [printData, setPrintData] = useState<Receipt58mmData | null>(null);
@@ -127,7 +123,7 @@ export function OrdersView({
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
-      if (dateFilter && o.transactionDate.slice(0, 10) !== dateFilter) return false;
+      if (dateFilter && dateStrInTz(o.transactionDate) !== dateFilter) return false;
       if (q) {
         const match =
           o.orderNumber.toLowerCase().includes(q) ||

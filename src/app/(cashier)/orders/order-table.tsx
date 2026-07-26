@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { rupiah } from "@/lib/format";
+import { rupiah, formatInTz } from "@/lib/format";
 import { isAwaitingPaymentStatus } from "@/lib/order-status";
 import type { OrderRow } from "./types";
 
@@ -72,7 +72,7 @@ export function OrderTable({
                 onClick={() => onSelect(o)}
               >
                 <TableCell>
-                  {new Date(o.transactionDate).toLocaleString("id-ID", {
+                  {formatInTz(o.transactionDate, {
                     day: "2-digit",
                     month: "2-digit",
                     hour: "2-digit",

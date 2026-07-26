@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { dateStrInTz } from "@/lib/format";
 
 export type DailyRevenue = { date: string; total: number; count: number };
 
@@ -37,10 +38,10 @@ export async function getDailyRevenue(
   for (let i = 0; i < dayCount; i++) {
     const d = new Date(since);
     d.setDate(since.getDate() + i);
-    map.set(d.toISOString().slice(0, 10), { total: 0, count: 0 });
+    map.set(dateStrInTz(d), { total: 0, count: 0 });
   }
   for (const o of orders) {
-    const key = o.transactionDate.toISOString().slice(0, 10);
+    const key = dateStrInTz(o.transactionDate);
     const entry = map.get(key);
     if (entry) {
       entry.total += o.total;
@@ -131,10 +132,9 @@ export async function getHourlyRevenue(
   cashierId?: string,
   date?: Date,
 ): Promise<HourlyRevenue[]> {
-  const target = date ?? new Date();
-  target.setHours(0, 0, 0, 0);
-  const nextDay = new Date(target);
-  nextDay.setDate(nextDay.getDate() + 1);
+  const targetDateStr = dateStrInTz(date ?? new Date());
+  const target = new Date(`${targetDateStr}T00:00:00+07:00`);
+  const nextDay = new Date(target.getTime() + 86400000);
 
   const orders = await prisma.order.findMany({
     where: {
@@ -149,7 +149,7 @@ export async function getHourlyRevenue(
   const map = new Map<number, { total: number; count: number }>();
   for (let i = 0; i < 24; i++) map.set(i, { total: 0, count: 0 });
   for (const o of orders) {
-    const h = o.transactionDate.getHours();
+    const h = (o.transactionDate.getUTCHours() + 7) % 24; // ponytail: WIB (UTC+7), no DST
     const e = map.get(h)!;
     e.total += o.total;
     e.count += 1;
@@ -287,6 +287,7 @@ export type TransactionRow = {
   id: string;
   orderNumber: string;
   date: string;
+  customerName: string | null;
   cashierName: string;
   channel: string;
   paymentMethod: string;
@@ -319,6 +320,7 @@ export async function getTransactions(
     id: o.id,
     orderNumber: o.orderNumber,
     date: o.transactionDate.toISOString(),
+    customerName: o.customerName,
     cashierName: o.cashier?.name ?? "—",
     channel: o.channel === "QR" ? "QR Table" : "Kasir",
     paymentMethod: o.paymentMethod ?? "—",

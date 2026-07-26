@@ -32,11 +32,6 @@ export function OverviewChart({ hourlyData, dailyData, viewMode }: Props) {
     return dailyData.map((d) => ({ label: d.date, total: d.total, count: d.count }));
   }, [hourlyData, dailyData, viewMode]);
 
-  const description =
-    viewMode === "hourly"
-      ? "Data per jam"
-      : `${chartData.length} hari terakhir`;
-
   if (!chartData.length) {
     return (
       <div className="flex h-48 items-center justify-center text-sm text-muted-foreground">
@@ -65,8 +60,8 @@ export function OverviewChart({ hourlyData, dailyData, viewMode }: Props) {
             axisLine={false}
             interval={viewMode === "hourly" ? 3 : Math.max(Math.floor(chartData.length / 6), 0)}
             tickFormatter={(v: string) => {
-              if (viewMode === "hourly") return v.replace(":00", "");
-              const d = new Date(v + "T00:00:00");
+              if (viewMode === "hourly") return v;
+              const d = new Date(v + "T00:00:00+07:00");
               return d.toLocaleDateString("id-ID", {
                 day: "numeric",
                 month: "short",
@@ -81,7 +76,7 @@ export function OverviewChart({ hourlyData, dailyData, viewMode }: Props) {
                 labelFormatter={(label) => {
                   const labelStr = String(label);
                   if (viewMode === "hourly") return `Jam ${labelStr}`;
-                  const d = new Date(labelStr + "T00:00:00");
+                  const d = new Date(labelStr + "T00:00:00+07:00");
                   return d.toLocaleDateString("id-ID", {
                     weekday: "long",
                     day: "numeric",

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useCallback, useState } from "react";
@@ -7,6 +7,7 @@ import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Calendar01Icon } from "@hugeicons/core-free-icons";
+import { dateStrInTz, todayStrInTz } from "@/lib/format";
 
 function fmt(d: string) {
   if (!d) return "";
@@ -37,8 +38,15 @@ export function OverviewFilters() {
     [router, pathname],
   );
 
-  const today = new Date();
-  const todayStr = today.toISOString().slice(0, 10);
+  const todayStr = todayStrInTz();
+  const sevenDaysAgoStr = dateStrInTz(
+    new Date(new Date(`${todayStr}T00:00:00+07:00`).getTime() - 6 * 86400000),
+  );
+  const monthStartStr = (() => {
+    const [year, month] = todayStr.split("-");
+    return `${year}-${month}-01`;
+  })();
+  const isDefaultToday = !fromParam && !toParam;
 
   return (
     <div className="flex flex-wrap items-end justify-end gap-2">
@@ -56,8 +64,8 @@ export function OverviewFilters() {
             onSelectRange={(r) => {
               setRange(r);
               if (r.from && r.to) {
-                const f = r.from.toISOString().slice(0, 10);
-                const t = r.to.toISOString().slice(0, 10);
+                const f = dateStrInTz(r.from);
+                const t = dateStrInTz(r.to);
                 setFilter(
                   f < t ? f : t,
                   f < t ? t : f,
@@ -68,15 +76,29 @@ export function OverviewFilters() {
         </PopoverContent>
       </Popover>
 
+      {/* Hari Ini */}
+      <Button
+        variant={
+          isDefaultToday || (fromParam === todayStr && toParam === todayStr)
+            ? "default"
+            : "outline"
+        }
+        size="lg"
+        onClick={() => { setFilter(todayStr, todayStr); }}
+      >
+        Hari Ini
+      </Button>
+
       {/* 7 Hari Terakhir */}
       <Button
-        variant={(!fromParam && !toParam) || (fromParam === new Date(today.getTime() - 6 * 86400000).toISOString().slice(0, 10) && toParam === todayStr) ? "default" : "outline"}
+        variant={
+          fromParam === sevenDaysAgoStr && toParam === todayStr
+            ? "default"
+            : "outline"
+        }
         size="lg"
         onClick={() => {
-          const d = new Date();
-          const end = d.toISOString().slice(0, 10);
-          d.setDate(d.getDate() - 6);
-          setFilter(d.toISOString().slice(0, 10), end);
+          setFilter(sevenDaysAgoStr, todayStr);
         }}
       >
         7 Hari Terakhir
@@ -85,19 +107,13 @@ export function OverviewFilters() {
       {/* Bulan Ini */}
       <Button
         variant={
-          (() => {
-            const now = new Date();
-            const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-            return fromParam === startOfMonth && toParam === todayStr ? "default" : "outline";
-          })()
+          fromParam === monthStartStr && toParam === todayStr
+            ? "default"
+            : "outline"
         }
         size="lg"
         onClick={() => {
-          const now = new Date();
-          const start = new Date(now.getFullYear(), now.getMonth(), 1)
-            .toISOString()
-            .slice(0, 10);
-          setFilter(start, now.toISOString().slice(0, 10));
+          setFilter(monthStartStr, todayStr);
         }}
       >
         Bulan Ini

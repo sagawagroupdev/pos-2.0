@@ -202,7 +202,7 @@ export function CartPanel({
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-medium leading-tight">
+                        <p className="line-clamp-3 wrap-break-word text-xs font-medium leading-tight">
                           {item.name}
                         </p>
                         <p className="text-xs font-medium text-primary">

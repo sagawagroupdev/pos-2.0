@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/sheet";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { isAwaitingPaymentStatus, isDraftStatus } from "@/lib/order-status";
-import { rupiah } from "@/lib/format";
+import { rupiah, formatInTz } from "@/lib/format";
 import type { OrderRow } from "./types";
 
 const TYPE_LABEL: Record<OrderRow["type"], string> = {
@@ -48,7 +48,7 @@ export function OrderDetailDialog({
         <SheetHeader>
           <SheetTitle>Detail Pesanan</SheetTitle>
           <SheetDescription>
-            {order && new Date(order.transactionDate).toLocaleString("id-ID")}
+            {order && formatInTz(order.transactionDate)}
           </SheetDescription>
         </SheetHeader>
 
@@ -138,7 +138,7 @@ export function OrderDetailDialog({
                 </span>
                 <InfoRow
                   label="Dihapus"
-                  value={new Date(order.deletedAt).toLocaleString("id-ID")}
+                  value={formatInTz(order.deletedAt)}
                 />
                 <div className="flex flex-col gap-0.5">
                   <span className="text-muted-foreground">Alasan</span>

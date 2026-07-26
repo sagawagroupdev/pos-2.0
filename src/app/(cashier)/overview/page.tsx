@@ -25,26 +25,35 @@ import { OverviewDonut } from "./overview-donut";
 import { OverviewPaymentBar } from "./overview-payment-bar";
 import { OverviewFilters } from "./overview-filters";
 
+/** YYYY-MM-DD in WIB (UTC+7) — server-safe. */
+function fmtWIB(d: Date): string {
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+}
+
 export default async function OverviewPage(props: {
   searchParams: Promise<{ from?: string; to?: string }>;
 }) {
   const session = await requireRole("CASHIER");
-  const { from, to } = await props.searchParams;
+  const { from: rawFrom, to: rawTo } = await props.searchParams;
 
   const now = new Date();
   const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const weekStart = new Date(dayStart);
   weekStart.setDate(dayStart.getDate() - 6);
 
+  /** Default filter → hari ini (WIB). */
+  const todayWIB = fmtWIB(now);
+  const from = rawFrom ?? todayWIB;
+  const to = rawTo ?? todayWIB;
+
   const fmtDate = (s: string) => {
     const [y, m, d] = s.split("-");
     return `${d}/${m}/${y}`;
   };
-  const hasFilter = !!from && !!to;
-  const singleDay = hasFilter && from === to;
-  const filterFrom = hasFilter ? new Date(from + "T00:00:00") : undefined;
-  const filterTo = hasFilter ? new Date(to + "T23:59:59") : undefined;
-  const chartDate = hasFilter ? filterTo : new Date();
+  const singleDay = from === to;
+  const filterFrom = new Date(from + "T00:00:00+07:00");
+  const filterTo = new Date(to + "T23:59:59+07:00");
+  const chartDate = filterTo;
   const chartView = singleDay ? "hourly" : "daily";
 
   const [
@@ -59,7 +68,7 @@ export default async function OverviewPage(props: {
     getRevenueSummary(session.user.id),
     getDailyRevenue(7, session.user.id, filterFrom, filterTo),
     getHourlyRevenue(session.user.id, chartDate),
-    getTransactions(filterFrom ?? weekStart, filterTo ?? now, session.user.id, 10),
+    getTransactions(filterFrom, filterTo, session.user.id, 10),
     getPaymentMethodBreakdown(session.user.id, filterFrom, filterTo),
     getOrderTypeBreakdown(session.user.id, filterFrom, filterTo),
     getTopMenuItems(session.user.id, 5, filterFrom, filterTo),
@@ -87,12 +96,12 @@ export default async function OverviewPage(props: {
         </div>
       </div>
 
-      {/* Global Filter â€” wrapped in Suspense because it uses useSearchParams */}
+      {/* Global Filter — wrapped in Suspense because it uses useSearchParams */}
       <Suspense fallback={<div className="h-9" />}>
         <OverviewFilters />
       </Suspense>
 
-      {/* Stat Cards â€” bento row (always constant: hari ini / bulan ini) */}
+      {/* Stat Cards — bento row (always constant: hari ini / bulan ini) */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader>
@@ -133,7 +142,7 @@ export default async function OverviewPage(props: {
         <Card>
           <CardHeader>
             <CardDescription>Transaksi Hari Ini</CardDescription>
-            <CardTitle className="text-2xl">{summary.todayTrx ?? "â€”"}</CardTitle>
+            <CardTitle className="text-2xl">{summary.todayTrx ?? "—"}</CardTitle>
           </CardHeader>
         </Card>
         <Card>
@@ -193,14 +202,12 @@ export default async function OverviewPage(props: {
         </Card>
       </div>
 
-      {/* Chart â€” full width */}
+      {/* Chart — full width */}
       <Card>
         <CardHeader>
           <CardTitle>Ringkasan Penjualan</CardTitle>
           <CardDescription>
-            {hasFilter
-              ? `${fmtDate(from)} - ${fmtDate(to)}`
-              : "7 hari terakhir"}
+            {`${fmtDate(from)} - ${fmtDate(to)}`}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -268,9 +275,7 @@ export default async function OverviewPage(props: {
           <CardHeader>
             <CardTitle>10 Transaksi Terbaru</CardTitle>
             <CardDescription>
-              {hasFilter
-                ? `Riwayat transaksi ${fmtDate(from)} - ${fmtDate(to)}.`
-                : "Riwayat transaksi 7 hari terakhir."}
+              {`Riwayat transaksi ${fmtDate(from)} - ${fmtDate(to)}.`}
             </CardDescription>
           </CardHeader>
           <CardContent className="p-0">
@@ -308,10 +313,7 @@ export default async function OverviewPage(props: {
                           })}
                         </td>
                         <td className="px-4 py-3">
-                          {trx.cashierName}
-                          <span className="ml-1 text-xs text-muted-foreground">
-                            ({trx.channel === "QR Table" ? "QR" : "Kasir"})
-                          </span>
+                          {trx.customerName ?? "—"}
                         </td>
                         <td className="px-4 py-3">{trx.paymentMethod}</td>
                         <td className="px-4 py-3 text-right tabular-nums">

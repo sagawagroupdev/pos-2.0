@@ -627,7 +627,7 @@ export function PosTerminal({
                           )}
                         </div>
                         <div className="flex flex-col p-1.5">
-                          <span className="line-clamp-1 text-sm font-medium leading-tight">
+                          <span className="block line-clamp-3 wrap-break-word text-xs font-medium leading-tight">
                             {item.name}
                           </span>
                           <span className="text-xs font-medium text-primary">
