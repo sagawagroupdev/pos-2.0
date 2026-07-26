@@ -8,6 +8,7 @@ import { signOut } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Drawer, DrawerContent } from "@/components/ui/drawer";
 import {
   Tooltip,
   TooltipTrigger,
@@ -56,6 +57,7 @@ export function DashboardShell({
   const pathname = usePathname();
   const router = useRouter();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const printer = usePrinter();
 
@@ -79,21 +81,16 @@ export function DashboardShell({
   const pageTitle = currentItem?.label ?? "";
 
   async function handleLogout() {
+    setMobileSidebarOpen(false);
     await signOut();
     router.push("/login");
     router.refresh();
   }
 
-  return (
-    <div className="flex min-h-screen bg-muted/50">
-      <aside
-        className={cn(
-          "flex flex-col bg-muted/30 transition-all duration-300 shrink-0 sticky top-0 h-screen",
-          collapsed ? "w-16" : "w-60"
-        )}
-      >
-        {/* Brand logo */}
-        <div className="flex items-center h-14 shrink-0 gap-3 px-3">
+  function renderSidebar(mobile = false) {
+    return (
+      <>
+        <div className="flex h-14 shrink-0 items-center gap-3 px-3">
           <Image
             src="/assets/img/pos-sgw.svg"
             alt="Sagawa POS"
@@ -101,82 +98,87 @@ export function DashboardShell({
             height={28}
             className="shrink-0"
           />
-          {!collapsed && (
-            <span className="font-semibold text-sm truncate">
-              Sagawa POS
-            </span>
-          )}
+          <span className="truncate text-sm font-semibold">Sagawa POS</span>
         </div>
 
-        {/* Nav items */}
         <ScrollArea className="flex-1">
-          <nav className={cn("space-y-1 pt-1", collapsed ? "px-2" : "px-2")}>
+          <nav className="space-y-1 px-2 pt-1">
             {items.map((item) => {
               const active =
-                pathname === item.href ||
-                pathname.startsWith(`${item.href}/`);
+                pathname === item.href || pathname.startsWith(`${item.href}/`);
               const icon = ICON_MAP[item.href];
 
               const link = (
                 <Link
                   href={item.href}
+                  onClick={() => mobile && setMobileSidebarOpen(false)}
                   className={cn(
                     "flex items-center gap-3 rounded-xl text-sm transition-colors",
-                    collapsed ? "justify-center size-10" : "px-3 py-2",
+                    mobile || !collapsed ? "px-3 py-2" : "justify-center size-10",
                     active
                       ? "bg-primary text-primary-foreground"
                       : "hover:bg-white"
                   )}
                 >
                   {icon ?? null}
-                  {!collapsed && (
+                  {(!collapsed || mobile) && (
                     <span className="truncate">{item.label}</span>
                   )}
                 </Link>
               );
 
-              if (collapsed && icon) {
+              if (!mobile && collapsed && icon) {
                 return (
                   <Tooltip key={item.href}>
                     <TooltipTrigger render={link} />
-                    <TooltipContent side="right">
-                      {item.label}
-                    </TooltipContent>
+                    <TooltipContent side="right">{item.label}</TooltipContent>
                   </Tooltip>
                 );
               }
+
               return <div key={item.href}>{link}</div>;
             })}
           </nav>
         </ScrollArea>
 
-        {/* Logout */}
-        <div
-          className={cn(
-            "p-2",
-            collapsed && "flex justify-center"
-          )}
-        >
+        <div className={cn("p-2", !mobile && collapsed && "flex justify-center")}>
           <Tooltip>
             <TooltipTrigger
               render={
                 <Button
                   variant="destructive"
-                  size={collapsed ? "icon" : "sm"}
-                  className={collapsed ? "size-10" : "w-full"}
+                  size={!mobile && collapsed ? "icon" : "sm"}
+                  className={!mobile && collapsed ? "size-10" : "w-full"}
                   onClick={handleLogout}
                 >
                   <HugeiconsIcon icon={Logout01Icon} color="currentColor" size={20} strokeWidth={1.5} />
-                  {!collapsed && "Keluar"}
+                  {(!mobile && !collapsed) && "Keluar"}
                 </Button>
               }
             />
-            {collapsed && (
-              <TooltipContent side="right">Keluar</TooltipContent>
-            )}
+            {!mobile && collapsed && <TooltipContent side="right">Keluar</TooltipContent>}
           </Tooltip>
         </div>
+      </>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen bg-muted/50">
+      <aside
+        className={cn(
+          "hidden sticky top-0 h-screen shrink-0 flex-col bg-muted/30 transition-all duration-300 lg:flex",
+          collapsed ? "w-16" : "w-60"
+        )}
+      >
+        {renderSidebar(false)}
       </aside>
+
+      <Drawer open={mobileSidebarOpen} onOpenChange={setMobileSidebarOpen} swipeDirection="left">
+        <DrawerContent className="w-72 max-w-[85vw] bg-muted/30 shadow-none backdrop-blur-0">
+          {renderSidebar(true)}
+        </DrawerContent>
+      </Drawer>
 
       {/* Main content */}
       <main className="flex-1 min-w-0">
@@ -184,6 +186,16 @@ export function DashboardShell({
           {/* Page header */}
           <div className="flex items-center gap-3 px-4 h-12 border-b shrink-0">
             <Button
+              className="lg:hidden"
+              variant="ghost"
+              size="icon-sm"
+              onClick={() => setMobileSidebarOpen(true)}
+              aria-label="Buka sidebar"
+            >
+              <HugeiconsIcon icon={SidebarLeftIcon} color="currentColor" size={24} strokeWidth={1.5} />
+            </Button>
+            <Button
+              className="hidden lg:inline-flex"
               variant="ghost"
               size="icon-sm"
               onClick={() => setCollapsed((c) => !c)}
