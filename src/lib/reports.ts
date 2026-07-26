@@ -4,21 +4,30 @@ import { dateStrInTz } from "@/lib/format";
 
 export type DailyRevenue = { date: string; total: number; count: number };
 
+function shiftWibDate(dateStr: string, days: number): string {
+  const [year, month, day] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toLocaleDateString("en-CA", { timeZone: "Asia/Jakarta" });
+}
+
+function wibDayStart(dateStr: string): Date {
+  return new Date(`${dateStr}T00:00:00+07:00`);
+}
+
+function wibDayEnd(dateStr: string): Date {
+  return new Date(`${dateStr}T23:59:59.999+07:00`);
+}
+
 export async function getDailyRevenue(
   days = 30,
   cashierId?: string,
   fromDate?: Date,
   toDate?: Date,
 ): Promise<DailyRevenue[]> {
-  const since = fromDate ?? (() => {
-    const d = new Date();
-    d.setDate(d.getDate() - (days - 1));
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
-
-  const until = toDate ?? new Date();
-  until.setHours(23, 59, 59, 999);
+  const todayWib = dateStrInTz(new Date());
+  const since = fromDate ?? wibDayStart(shiftWibDate(todayWib, -(days - 1)));
+  const until = toDate ?? wibDayEnd(todayWib);
 
   const orders = await prisma.order.findMany({
     where: {
@@ -64,15 +73,13 @@ export type RevenueSummary = {
 export async function getRevenueSummary(
   cashierId?: string
 ): Promise<RevenueSummary> {
-  const now = new Date();
-  const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const yesterdayStart = new Date(dayStart);
-  yesterdayStart.setDate(dayStart.getDate() - 1);
-  const weekStart = new Date(dayStart);
-  weekStart.setDate(dayStart.getDate() - 6);
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+  const todayWib = dateStrInTz(new Date());
+  const yesterdayWib = shiftWibDate(todayWib, -1);
+  const weekStartWib = shiftWibDate(todayWib, -6);
+  const monthStartWib = `${todayWib.slice(0, 7)}-01`;
+  const lastMonthAnchor = shiftWibDate(monthStartWib, -1);
+  const lastMonthStartWib = `${lastMonthAnchor.slice(0, 7)}-01`;
+  const lastMonthEndWib = shiftWibDate(monthStartWib, -1);
 
   const baseFilter = (gte: Date, lte?: Date) => ({
     status: "PAID" as const,
@@ -83,27 +90,27 @@ export async function getRevenueSummary(
 
   const [day, yesterdayAgg, todayCount, week, month, lastMonth] = await Promise.all([
     prisma.order.aggregate({
-      where: baseFilter(dayStart),
+      where: baseFilter(wibDayStart(todayWib), wibDayEnd(todayWib)),
       _sum: { total: true },
     }),
     prisma.order.aggregate({
-      where: baseFilter(yesterdayStart, dayStart),
+      where: baseFilter(wibDayStart(yesterdayWib), wibDayEnd(yesterdayWib)),
       _sum: { total: true },
     }),
     prisma.order.count({
-      where: baseFilter(dayStart),
+      where: baseFilter(wibDayStart(todayWib), wibDayEnd(todayWib)),
     }),
     prisma.order.aggregate({
-      where: baseFilter(weekStart),
+      where: baseFilter(wibDayStart(weekStartWib), wibDayEnd(todayWib)),
       _sum: { total: true },
     }),
     prisma.order.aggregate({
-      where: baseFilter(monthStart),
+      where: baseFilter(wibDayStart(monthStartWib), wibDayEnd(todayWib)),
       _sum: { total: true },
       _count: true,
     }),
     prisma.order.aggregate({
-      where: baseFilter(lastMonthStart, lastMonthEnd),
+      where: baseFilter(wibDayStart(lastMonthStartWib), wibDayEnd(lastMonthEndWib)),
       _sum: { total: true },
     }),
   ]);
@@ -170,12 +177,9 @@ export async function getOrderTypeBreakdown(
   fromDate?: Date,
   toDate?: Date,
 ): Promise<OrderTypeBreakdown[]> {
-  const start = fromDate ?? (() => {
-    const d = new Date();
-    d.setDate(1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
+  const todayWib = dateStrInTz(new Date());
+  const start = fromDate ?? wibDayStart(`${todayWib.slice(0, 7)}-01`);
+  const end = toDate ?? wibDayEnd(todayWib);
 
   const orders = await prisma.order.findMany({
     where: {
@@ -183,7 +187,7 @@ export async function getOrderTypeBreakdown(
       deletedAt: null,
       transactionDate: {
         gte: start,
-        ...(toDate ? { lte: toDate } : {}),
+        lte: end,
       },
       ...(cashierId ? { cashierId } : {}),
     },
@@ -215,12 +219,9 @@ export async function getTopMenuItems(
   fromDate?: Date,
   toDate?: Date,
 ): Promise<TopMenuItem[]> {
-  const start = fromDate ?? (() => {
-    const d = new Date();
-    d.setDate(1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
+  const todayWib = dateStrInTz(new Date());
+  const start = fromDate ?? wibDayStart(`${todayWib.slice(0, 7)}-01`);
+  const end = toDate ?? wibDayEnd(todayWib);
 
   const orderItems = await prisma.orderItem.findMany({
     where: {
@@ -229,7 +230,7 @@ export async function getTopMenuItems(
         deletedAt: null,
         transactionDate: {
           gte: start,
-          ...(toDate ? { lte: toDate } : {}),
+          lte: end,
         },
         ...(cashierId ? { cashierId } : {}),
       },
@@ -340,12 +341,9 @@ export async function getPaymentMethodBreakdown(
   fromDate?: Date,
   toDate?: Date,
 ): Promise<PaymentMethodBreakdown[]> {
-  const start = fromDate ?? (() => {
-    const d = new Date();
-    d.setDate(1);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
+  const todayWib = dateStrInTz(new Date());
+  const start = fromDate ?? wibDayStart(`${todayWib.slice(0, 7)}-01`);
+  const end = toDate ?? wibDayEnd(todayWib);
 
   const orders = await prisma.order.findMany({
     where: {
@@ -354,7 +352,7 @@ export async function getPaymentMethodBreakdown(
       paymentMethod: { not: null },
       transactionDate: {
         gte: start,
-        ...(toDate ? { lte: toDate } : {}),
+        lte: end,
       },
       ...(cashierId ? { cashierId } : {}),
     },
