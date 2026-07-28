@@ -305,7 +305,8 @@ export default async function OverviewPage(props: {
                           {i + 1}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap">
-                          {new Date(trx.date).toLocaleDateString("id-ID", {
+                          {new Date(trx.date).toLocaleString("id-ID", {
+                            timeZone: "Asia/Jakarta",
                             day: "numeric",
                             month: "short",
                             hour: "2-digit",
