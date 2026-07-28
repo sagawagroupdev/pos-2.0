@@ -1,5 +1,5 @@
 import { requireRole } from "@/lib/session";
-import { getCashierPerformance, getTransactions } from "@/lib/reports";
+import { getOutletPerformance, getTransactions } from "@/lib/reports";
 import { LaporanView } from "./laporan-view";
 
 export default async function LaporanPage() {
@@ -9,8 +9,8 @@ export default async function LaporanPage() {
   const from = new Date(now.getFullYear(), now.getMonth(), 1);
   const to = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-  const [cashiers, transactions] = await Promise.all([
-    getCashierPerformance(from, to),
+  const [outlets, transactions] = await Promise.all([
+    getOutletPerformance(from, to),
     getTransactions(from, to),
   ]);
 
@@ -18,7 +18,7 @@ export default async function LaporanPage() {
     <div className="flex flex-col gap-6">
       <h1>Laporan</h1>
       <LaporanView
-        initialCashiers={cashiers}
+        initialOutlets={outlets}
         initialTransactions={transactions}
         defaultFrom={from.toISOString().slice(0, 10)}
         defaultTo={to.toISOString().slice(0, 10)}

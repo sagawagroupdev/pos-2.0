@@ -39,7 +39,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   "/overview": <HugeiconsIcon icon={DashboardSquare01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
   "/pos": <HugeiconsIcon icon={CashierIcon} color="currentColor" size={20} strokeWidth={1.5} />,
   "/orders": <HugeiconsIcon icon={File01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
-  "/kasir": <HugeiconsIcon icon={UserGroupIcon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/outlet": <HugeiconsIcon icon={UserGroupIcon} color="currentColor" size={20} strokeWidth={1.5} />,
   "/kemitraan": <HugeiconsIcon icon={Store01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
   "/laporan": <HugeiconsIcon icon={File01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
   "/settings": <HugeiconsIcon icon={Settings01Icon} color="currentColor" size={20} strokeWidth={1.5} />,

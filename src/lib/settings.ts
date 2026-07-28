@@ -104,8 +104,8 @@ export async function getCashierOutlet(userId: string): Promise<CashierOutlet> {
   };
 }
 
-export async function getSettings(): Promise<StoreSettings> {
-  const existing = await prisma.setting.findFirst();
+export async function getSettings(outletId: string): Promise<StoreSettings> {
+  const existing = await prisma.setting.findUnique({ where: { outletId } });
   if (existing) return existing;
-  return prisma.setting.create({ data: { id: SETTINGS_ID } });
+  return prisma.setting.create({ data: { outletId } });
 }

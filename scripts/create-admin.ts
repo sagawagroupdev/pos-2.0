@@ -20,9 +20,9 @@ const auth = betterAuth({
   plugins: [
     username(),
     admin({
-      defaultRole: "CASHIER",
+      defaultRole: "OUTLET",
       adminRoles: ["ADMIN"],
-      roles: { ADMIN: adminAc, CASHIER: userAc },
+      roles: { ADMIN: adminAc, OUTLET: userAc },
     }),
   ],
 });

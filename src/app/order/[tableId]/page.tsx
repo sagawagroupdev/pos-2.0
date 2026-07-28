@@ -17,7 +17,7 @@ export default async function OrderPage({
   });
   if (!table) notFound();
 
-  const [menu, settings] = await Promise.all([getMenu(), getSettings()]);
+  const [menu, settings] = await Promise.all([getMenu(table.cashierId), getSettings(table.cashierId)]);
 
   return (
     <CustomerOrder

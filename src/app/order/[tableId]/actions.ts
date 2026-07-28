@@ -84,7 +84,7 @@ export async function submitQrOrder(
       tableNumber: table.number,
     });
 
-    await invalidateMenuCache();
+    await invalidateMenuCache(table.cashierId);
     await notifyNewQrOrder(table.cashierId, {
       orderId: order.id,
       customerName: order.customerName,

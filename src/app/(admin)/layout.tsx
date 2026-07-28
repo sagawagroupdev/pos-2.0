@@ -3,7 +3,7 @@ import { DashboardShell, type NavItem } from "@/components/dashboard/dashboard-s
 
 const ADMIN_NAV: NavItem[] = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/kasir", label: "Kasir" },
+  { href: "/outlet", label: "Outlet" },
   { href: "/kemitraan", label: "Kemitraan" },
   { href: "/laporan", label: "Laporan" },
   { href: "/settings", label: "Pengaturan" },

@@ -18,10 +18,10 @@ export default async function PosPage({
 }: {
   searchParams: Promise<{ resume?: string; checkout?: string }>;
 }) {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
   const [menu, settings, outlet, { resume, checkout }] = await Promise.all([
-    getMenu(),
-    getSettings(),
+    getMenu(session.user.id),
+    getSettings(session.user.id),
     getCashierOutlet(session.user.id),
     searchParams,
   ]);
