@@ -136,9 +136,9 @@ export function SettingsJadwalTab({
             type="button"
             size="sm"
             onClick={onSave}
-            disabled={hoursPending}
+            loading={hoursPending}
           >
-            {hoursPending ? "Menyimpan..." : "Simpan Jadwal"}
+            Simpan Jadwal
           </Button>
         </div>
       </CardContent>

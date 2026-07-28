@@ -252,8 +252,8 @@ export function QrOrderScannerDialog() {
               aria-label="Payload QR pesanan"
               disabled={submitting}
             />
-            <Button type="submit" disabled={submitting || !payload}>
-              {submitting ? "Mengambil pesanan..." : "Muat pesanan"}
+            <Button type="submit" disabled={!payload} loading={submitting}>
+              Muat pesanan
             </Button>
           </form>
         ) : (

@@ -210,8 +210,8 @@ export function QrTableManager({ tables }: { tables: TableRow[] }) {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button type="submit" disabled={pending}>
-                    {pending ? "Menyimpan..." : "Simpan"}
+                  <Button type="submit" loading={pending}>
+                    Simpan
                   </Button>
                 </DialogFooter>
               </form>

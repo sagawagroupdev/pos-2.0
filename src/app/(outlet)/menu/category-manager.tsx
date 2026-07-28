@@ -101,8 +101,8 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
                 <Input id="cat-name" name="name" required />
               </div>
               <DialogFooter>
-                <Button type="submit" disabled={pending}>
-                  {pending ? "Menyimpan..." : "Simpan"}
+                <Button type="submit" loading={pending}>
+                  Simpan
                 </Button>
               </DialogFooter>
             </form>
@@ -169,10 +169,11 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
                             render={
                               <Button
                                 variant="destructive"
-                                disabled={pending || (deleteTarget?.itemCount ?? 0) > 0}
+                                loading={pending}
+                                disabled={(deleteTarget?.itemCount ?? 0) > 0}
                                 onClick={confirmDelete}
                               >
-                                {pending ? "Menghapus..." : "Hapus"}
+                                Hapus
                               </Button>
                             }
                           />
@@ -205,8 +206,8 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
               />
             </div>
             <DialogFooter>
-              <Button type="submit" disabled={pending}>
-                {pending ? "Menyimpan..." : "Simpan"}
+              <Button type="submit" loading={pending}>
+                Simpan
               </Button>
             </DialogFooter>
           </form>

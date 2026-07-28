@@ -224,8 +224,8 @@ export function OutletManager({
                 />
               </ScrollArea>
               <div className="border-t px-4 py-3">
-                <Button type="submit" disabled={pending} className="w-full">
-                  {pending ? "Menyimpan..." : "Simpan"}
+                <Button type="submit" loading={pending} className="w-full">
+                  Simpan
                 </Button>
               </div>
             </form>
@@ -357,8 +357,8 @@ export function OutletManager({
               />
             </ScrollArea>
             <div className="border-t px-4 py-3">
-              <Button type="submit" disabled={pending} className="w-full">
-                {pending ? "Menyimpan..." : "Simpan"}
+              <Button type="submit" loading={pending} className="w-full">
+                Simpan
               </Button>
             </div>
           </form>
@@ -387,8 +387,8 @@ export function OutletManager({
               <DialogClose render={<Button variant="outline" type="button" />}>
                 Batal
               </DialogClose>
-              <Button type="submit" disabled={pending}>
-                {pending ? "Menyimpan..." : "Simpan"}
+              <Button type="submit" loading={pending}>
+                Simpan
               </Button>
             </DialogFooter>
           </form>

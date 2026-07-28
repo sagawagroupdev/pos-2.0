@@ -62,8 +62,8 @@ function LoginForm() {
           required
         />
       </div>
-      <Button type="submit" className="w-full" disabled={loading}>
-        {loading ? "Memproses..." : "Masuk"}
+      <Button type="submit" className="w-full" loading={loading}>
+        Masuk
       </Button>
     </form>
   );

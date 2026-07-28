@@ -160,7 +160,7 @@ export function OrderDetailDialog({
             </Button>
             <Button
               variant="destructive"
-              disabled={pending}
+              loading={pending}
               onClick={() => onDelete(order.id)}
             >
               Hapus

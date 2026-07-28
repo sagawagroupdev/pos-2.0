@@ -456,8 +456,8 @@ export function ItemManager({
                 />
               </div>
               <DrawerFooter>
-                <Button type="submit" disabled={pending}>
-                  {pending ? "Menyimpan..." : "Simpan"}
+                <Button type="submit" loading={pending}>
+                  Simpan
                 </Button>
               </DrawerFooter>
             </form>
@@ -706,10 +706,10 @@ export function ItemManager({
               render={
                 <Button
                   variant="destructive"
-                  disabled={pending}
+                  loading={pending}
                   onClick={confirmDelete}
                 >
-                  {pending ? "Menghapus..." : "Hapus"}
+                  Hapus
                 </Button>
               }
             />
@@ -745,8 +745,8 @@ export function ItemManager({
               )}
             </div>
             <DrawerFooter>
-              <Button type="submit" disabled={pending}>
-                {pending ? "Menyimpan..." : "Simpan"}
+              <Button type="submit" loading={pending}>
+                Simpan
               </Button>
             </DrawerFooter>
           </form>

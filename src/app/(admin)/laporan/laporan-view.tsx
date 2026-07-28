@@ -122,8 +122,8 @@ export function LaporanView({
               className="w-44"
             />
           </div>
-          <Button onClick={applyRange} disabled={pending}>
-            {pending ? "Memuat..." : "Terapkan"}
+          <Button onClick={applyRange} loading={pending}>
+            Terapkan
           </Button>
         </CardContent>
       </Card>

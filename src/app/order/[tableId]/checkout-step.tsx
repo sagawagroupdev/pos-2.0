@@ -214,8 +214,8 @@ export function CheckoutStep({
                 <span>{rupiah(total)}</span>
               </div>
             </div>
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Mengirim..." : "Kirim Pesanan"}
+            <Button type="submit" className="w-full" loading={submitting}>
+              Kirim Pesanan
             </Button>
           </div>
         </div>

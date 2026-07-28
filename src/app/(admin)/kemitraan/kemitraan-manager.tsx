@@ -198,8 +198,8 @@ export function KemitraanManager({
                 />
               </ScrollArea>
               <div className="border-t px-4 py-3">
-                <Button type="submit" disabled={pending} className="w-full">
-                  {pending ? "Menyimpan..." : "Simpan"}
+                <Button type="submit" loading={pending} className="w-full">
+                  Simpan
                 </Button>
               </div>
             </form>
@@ -260,7 +260,7 @@ export function KemitraanManager({
                   <Button
                     size="sm"
                     variant="destructive"
-                    disabled={pending}
+                    loading={pending}
                     onClick={() => handleDeletePartnership(p.id)}
                   >
                     Hapus
@@ -315,8 +315,8 @@ export function KemitraanManager({
               )}
             </ScrollArea>
             <div className="border-t px-4 py-3">
-              <Button type="submit" disabled={pending} className="w-full">
-                {pending ? "Menyimpan..." : "Simpan"}
+              <Button type="submit" loading={pending} className="w-full">
+                Simpan
               </Button>
             </div>
           </form>
@@ -344,8 +344,8 @@ export function KemitraanManager({
               />
             </ScrollArea>
             <div className="border-t px-4 py-3">
-              <Button type="submit" disabled={pending} className="w-full">
-                {pending ? "Menyimpan..." : "Simpan"}
+              <Button type="submit" loading={pending} className="w-full">
+                Simpan
               </Button>
             </div>
           </form>
@@ -374,8 +374,8 @@ export function KemitraanManager({
               )}
             </ScrollArea>
             <div className="border-t px-4 py-3">
-              <Button type="submit" disabled={pending} className="w-full">
-                {pending ? "Menyimpan..." : "Simpan"}
+              <Button type="submit" loading={pending} className="w-full">
+                Simpan
               </Button>
             </div>
           </form>

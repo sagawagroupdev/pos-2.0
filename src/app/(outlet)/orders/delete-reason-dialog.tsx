@@ -78,10 +78,10 @@ export function DeleteReasonDialog({
           </Button>
           <Button
             variant="destructive"
-            disabled={pending}
+            loading={pending}
             onClick={handleSubmit}
           >
-            {pending ? "Menghapus..." : "Hapus Riwayat"}
+            Hapus Riwayat
           </Button>
         </AlertDialogFooter>
       </AlertDialogContent>

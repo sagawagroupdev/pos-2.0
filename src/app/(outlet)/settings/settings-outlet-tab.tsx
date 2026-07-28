@@ -110,8 +110,8 @@ export function SettingsOutletTab({
                 />
               </div>
               <div>
-                <Button type="submit" disabled={pending} size="sm">
-                  {pending ? "Menyimpan..." : "Simpan Perubahan"}
+                <Button type="submit" loading={pending} size="sm">
+                  Simpan Perubahan
                 </Button>
               </div>
             </div>

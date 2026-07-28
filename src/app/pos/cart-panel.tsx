@@ -382,23 +382,21 @@ export function CartPanel({
                     variant="outline"
                     type="button"
                     onClick={onHold}
-                    disabled={holding || !hasItems}
+                    disabled={!hasItems}
+                    loading={holding}
                     className="h-11 flex-1 rounded-lg text-sm"
                   >
-                    {holding
-                      ? "Menahan..."
-                      : resumingDraftId
-                        ? "Perbarui Draft"
-                        : "Tahan"}
+                    {resumingDraftId ? "Perbarui Draft" : "Tahan"}
                   </Button>
                 )}
 
                 <Button
                   type="submit"
-                  disabled={submitting || !hasItems}
+                  disabled={!hasItems}
+                  loading={submitting}
                   className="h-11 flex-1 rounded-lg text-sm"
                 >
-                  {submitting ? "Memproses..." : `Bayar ${rupiah(total)}`}
+                  Bayar {rupiah(total)}
                 </Button>
               </div>
 

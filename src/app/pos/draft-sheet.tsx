@@ -304,13 +304,18 @@ export function DraftSheet({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={pending}>Batal</AlertDialogCancel>
+            <AlertDialogCancel render={<Button variant="outline" disabled={pending}>Batal</Button>} />
             <AlertDialogAction
-              disabled={pending}
-              onClick={() => confirmDelete && handleDelete(confirmDelete.id)}
-            >
-              Hapus
-            </AlertDialogAction>
+              render={
+                <Button
+                  variant="destructive"
+                  loading={pending}
+                  onClick={() => confirmDelete && handleDelete(confirmDelete.id)}
+                >
+                  Hapus
+                </Button>
+              }
+            />
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

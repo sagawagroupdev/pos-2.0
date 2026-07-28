@@ -47,7 +47,7 @@ export function SubItem({
         <Button
           size="sm"
           variant="ghost"
-          disabled={pending}
+          loading={pending}
           onClick={() => onDelete(sub.id)}
         >
           Hapus
