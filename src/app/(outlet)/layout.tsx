@@ -8,6 +8,7 @@ const OUTLET_NAV: NavItem[] = [
   { href: "/orders", label: "Pesanan" },
   { href: "/menu", label: "Menu" },
   { href: "/qr-table", label: "QR Table" },
+  { href: "/laporan-outlet", label: "Laporan" },
   { href: "/settings", label: "Pengaturan" },
 ];
 

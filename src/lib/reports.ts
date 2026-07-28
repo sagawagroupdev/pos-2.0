@@ -322,7 +322,7 @@ export async function getTransactions(
     orderNumber: o.orderNumber,
     date: o.transactionDate.toISOString(),
     customerName: o.customerName,
-    cashierName: o.cashier?.name ?? "—",
+    cashierName: o.cashierName ?? o.cashier?.name ?? "—",
     channel: o.channel === "QR" ? "QR Table" : "Kasir",
     paymentMethod: o.paymentMethod ?? "—",
     total: o.total,
@@ -335,6 +335,86 @@ export type PaymentMethodBreakdown = {
   count: number;
   total: number;
 };
+
+// ---------- Outlet Laporan ----------
+
+export type TransactionRowFull = {
+  id: string;
+  orderNumber: string;
+  date: string; // ISO string
+  customerName: string | null;
+  cashierName: string;
+  channel: string;
+  paymentMethod: string;
+  items: string; // "Nasi Goreng x2, Es Teh x1"
+  subtotal: number;
+  total: number;
+};
+
+export type OutletReportData = {
+  transactions: TransactionRowFull[];
+  paymentBreakdown: PaymentMethodBreakdown[];
+  topItems: TopMenuItem[];
+  totalRevenue: number;
+  avgTransaction: number;
+  totalTransactions: number;
+  qrisRevenue: number;
+};
+
+export async function getOutletReportData(
+  cashierId: string,
+  from: Date,
+  to: Date,
+): Promise<OutletReportData> {
+  const [orders, paymentBreakdown, topItems] = await Promise.all([
+    prisma.order.findMany({
+      where: {
+        status: "PAID",
+        deletedAt: null,
+        cashierId,
+        transactionDate: { gte: from, lte: to },
+      },
+      orderBy: { transactionDate: "desc" },
+      include: {
+        cashier: { select: { name: true } },
+        items: { select: { name: true, quantity: true } },
+      },
+    }),
+    getPaymentMethodBreakdown(cashierId, from, to),
+    getTopMenuItems(cashierId, 5, from, to),
+  ]);
+
+  const transactions: TransactionRowFull[] = orders.map((o) => ({
+    id: o.id,
+    orderNumber: o.orderNumber,
+    date: o.transactionDate.toISOString(),
+    customerName: o.customerName,
+    cashierName: o.cashierName ?? o.cashier?.name ?? "—",
+    channel: o.channel === "QR" ? "QR Table" : "Kasir",
+    paymentMethod: o.paymentMethod ?? "—",
+    items: o.items
+      .map((it) => `${it.name} x${it.quantity}`)
+      .join(", ") || "—",
+    subtotal: o.subtotal,
+    total: o.total,
+  }));
+
+  const totalRevenue = transactions.reduce((s, t) => s + t.total, 0);
+  const totalTransactions = transactions.length;
+  const avgTransaction = totalTransactions > 0 ? totalRevenue / totalTransactions : 0;
+  const qrisRevenue =
+    paymentBreakdown.find((p) => p.method === "QRIS")?.total ?? 0;
+
+  return {
+    transactions,
+    paymentBreakdown,
+    topItems,
+    totalRevenue,
+    avgTransaction,
+    totalTransactions,
+    qrisRevenue,
+  };
+}
 
 export async function getPaymentMethodBreakdown(
   cashierId?: string,

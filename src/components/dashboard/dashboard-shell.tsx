@@ -22,6 +22,7 @@ import {
   CashierIcon,
   DashboardSquare01Icon,
   File01Icon,
+  FileChartColumnIncreasingIcon,
   Logout01Icon,
   MenuRestaurantIcon,
   QrCodeIcon,
@@ -45,6 +46,7 @@ const ICON_MAP: Record<string, React.ReactNode> = {
   "/settings": <HugeiconsIcon icon={Settings01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
   "/menu": <HugeiconsIcon icon={MenuRestaurantIcon} color="currentColor" size={20} strokeWidth={1.5} />,
   "/qr-table": <HugeiconsIcon icon={QrCodeIcon} color="currentColor" size={20} strokeWidth={1.5} />,
+  "/laporan-outlet": <HugeiconsIcon icon={FileChartColumnIncreasingIcon} color="currentColor" size={20} strokeWidth={1.5} />,
 };
 
 export function DashboardShell({
