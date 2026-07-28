@@ -126,8 +126,8 @@ export async function getRevenueSummary(
   };
 }
 
-export type CashierPerformance = {
-  cashierId: string;
+export type OutletPerformance = {
+  outletId: string;
   name: string;
   revenue: number;
   transactions: number;
@@ -251,10 +251,10 @@ export async function getTopMenuItems(
     .slice(0, limit);
 }
 
-export async function getCashierPerformance(
+export async function getOutletPerformance(
   from: Date,
   to: Date
-): Promise<CashierPerformance[]> {
+): Promise<OutletPerformance[]> {
   const grouped = await prisma.order.groupBy({
     by: ["cashierId"],
     where: {
@@ -276,7 +276,7 @@ export async function getCashierPerformance(
 
   return grouped
     .map((g) => ({
-      cashierId: g.cashierId!,
+      outletId: g.cashierId!,
       name: nameMap.get(g.cashierId!) ?? "—",
       revenue: g._sum.total ?? 0,
       transactions: g._count,

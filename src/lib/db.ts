@@ -2,7 +2,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@/generated/prisma/client";
 
 function createAdapter() {
-  const url = new URL(process.env.DATABASE_URL!);
+  const urlStr = process.env.DATABASE_URL || "postgres://dummy:dummy@localhost:5432/dummy";
+  const url = new URL(urlStr);
   // connection_limit & pool_timeout biar koneksi gak drop
   url.searchParams.set("connection_limit", "5");
   url.searchParams.set("pool_timeout", "10");

@@ -119,7 +119,7 @@ export async function deletePartnership(id: string): Promise<ActionResult> {
   if (cashierCount > 0) {
     return {
       ok: false,
-      error: "Kemitraan masih memiliki kasir. Pindahkan atau hapus kasir dulu.",
+      error: "Kemitraan masih memiliki outlet. Pindahkan atau hapus outlet dulu.",
     };
   }
   const p = await prisma.partnership.findUnique({ where: { id }, select: { logo: true } });
@@ -237,7 +237,7 @@ export async function deleteSubPartnership(id: string): Promise<ActionResult> {
   if (cashierCount > 0) {
     return {
       ok: false,
-      error: "Sub kemitraan masih memiliki kasir. Pindahkan atau hapus kasir dulu.",
+      error: "Sub kemitraan masih memiliki outlet. Pindahkan atau hapus outlet dulu.",
     };
   }
   const sp = await prisma.subPartnership.findUnique({ where: { id }, select: { logo: true } });

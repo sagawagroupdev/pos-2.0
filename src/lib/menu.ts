@@ -19,11 +19,13 @@ export type MenuCategory = {
   }[];
 };
 
-export async function getMenu(): Promise<MenuCategory[]> {
-  const cached = await cacheGet<MenuCategory[]>(MENU_CACHE_KEY);
+export async function getMenu(outletId: string): Promise<MenuCategory[]> {
+  const cacheKey = `menu:full:${outletId}`;
+  const cached = await cacheGet<MenuCategory[]>(cacheKey);
   if (cached) return cached;
 
   const categories = await prisma.category.findMany({
+    where: { outletId },
     orderBy: { name: "asc" },
     include: {
       items: {
@@ -42,10 +44,10 @@ export async function getMenu(): Promise<MenuCategory[]> {
     },
   });
 
-  await cacheSet(MENU_CACHE_KEY, categories, MENU_TTL);
+  await cacheSet(cacheKey, categories, MENU_TTL);
   return categories;
 }
 
-export async function invalidateMenuCache() {
-  await cacheInvalidate(MENU_CACHE_KEY);
+export async function invalidateMenuCache(outletId: string) {
+  await cacheInvalidate(`menu:full:${outletId}`);
 }

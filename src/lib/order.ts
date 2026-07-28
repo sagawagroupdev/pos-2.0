@@ -81,7 +81,10 @@ export async function createOrder(input: CreateOrderInput) {
     throw new Error("Metode pembayaran wajib diisi untuk pesanan lunas");
   }
 
-  const settings = await getSettings();
+  if (!input.cashierId) {
+    throw new Error("cashierId (outletId) wajib diisi");
+  }
+  const settings = await getSettings(input.cashierId);
   const itemIds = input.lines.map((l) => l.itemId);
   const items = await prisma.item.findMany({
     where: { id: { in: itemIds } },

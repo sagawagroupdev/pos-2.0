@@ -43,7 +43,7 @@ export type ActionResult = { ok: boolean; error?: string };
 export async function submitPosOrder(
   input: PosOrderInput
 ): Promise<SubmitResult> {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
 
   const parsed = posOrderSchema.safeParse(input);
   if (!parsed.success) {
@@ -66,7 +66,7 @@ export async function submitPosOrder(
       deleteDraftId: parsed.data.resumingDraftId,
     });
 
-    await invalidateMenuCache();
+    await invalidateMenuCache(session.user.id);
     await notifyOrderUpdated(session.user.id);
     revalidatePath("/orders");
     revalidatePath("/pos");
@@ -80,7 +80,7 @@ export async function submitPosOrder(
 }
 
 export async function holdPosOrder(input: PosOrderInput): Promise<SubmitResult> {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
 
   const parsed = posOrderSchema.safeParse(input);
   if (!parsed.success) {
@@ -121,7 +121,7 @@ export async function claimQrCheckoutAction(
   | { ok: true; checkoutLockToken: string }
   | { ok: false; error: string }
 > {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
   const customerToken = parseCheckoutPayload(payload);
   if (!customerToken) return { ok: false, error: "QR pesanan tidak valid" };
 
@@ -149,7 +149,7 @@ export async function claimQrOrderByNumberAction(
   | { ok: true; checkoutLockToken: string }
   | { ok: false; error: string }
 > {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
   if (!orderNumber.trim()) return { ok: false, error: "Nomor pesanan tidak valid" };
 
   try {
@@ -181,7 +181,7 @@ export async function claimQrOrderByNumberAction(
 export async function releaseQrCheckoutAction(
   checkoutLockToken: string
 ): Promise<ActionResult> {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
   try {
     const released = await releaseQrCheckout({
       checkoutLockToken,
@@ -200,7 +200,7 @@ export async function releaseQrCheckoutAction(
 }
 
 export async function discardDraft(orderId: string): Promise<ActionResult> {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   // Only cashier holds are plain-deletable: they were created with skipStock,
   // via cancelQrOrder (which restocks) instead.
@@ -233,7 +233,7 @@ export async function settleQrCheckoutAction(
     discount: number;
   }
 ): Promise<SubmitResult> {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
 
   try {
     const result = await settleQrCheckout(
@@ -252,7 +252,7 @@ export async function settleQrCheckoutAction(
     );
     if (!result) return { ok: false, error: "Gagal memproses pembayaran QR" };
 
-    await invalidateMenuCache();
+    await invalidateMenuCache(session.user.id);
     await notifyOrderUpdated(session.user.id);
     revalidatePath("/orders");
     revalidatePath("/pos");
@@ -278,7 +278,7 @@ export type QrOrderListItem = {
 export async function listQrOrdersAction(): Promise<
   { ok: true; orders: QrOrderListItem[] } | { ok: false; error: string }
 > {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
   try {
     const orders = await prisma.order.findMany({
       where: {
@@ -319,7 +319,7 @@ export async function claimQrOrderByIdAction(
   | { ok: true; checkoutLockToken: string }
   | { ok: false; error: string }
 > {
-  const session = await requireRole("CASHIER");
+  const session = await requireRole("OUTLET");
   if (!orderId.trim()) return { ok: false, error: "ID pesanan tidak valid" };
 
   try {

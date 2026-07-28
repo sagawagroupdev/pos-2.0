@@ -40,12 +40,12 @@ function downloadCsv(filename: string, rows: string[][]) {
 }
 
 export function LaporanView({
-  initialCashiers,
+  initialOutlets,
   initialTransactions,
   defaultFrom,
   defaultTo,
 }: {
-  initialCashiers: CashierPerf;
+  initialOutlets: CashierPerf;
   initialTransactions: TxRows;
   defaultFrom: string;
   defaultTo: string;
@@ -53,7 +53,7 @@ export function LaporanView({
   const [pending, startTransition] = useTransition();
   const [from, setFrom] = useState(defaultFrom);
   const [to, setTo] = useState(defaultTo);
-  const [cashiers, setCashiers] = useState(initialCashiers);
+  const [cashiers, setCashiers] = useState(initialOutlets);
   const [transactions, setTransactions] = useState(initialTransactions);
 
   function applyRange() {
@@ -70,7 +70,7 @@ export function LaporanView({
 
   function exportTransactions() {
     const rows: string[][] = [
-      ["ID", "Tanggal", "Kasir", "Sumber", "Metode", "Item", "Total"],
+      ["ID", "Tanggal", "Outlet", "Sumber", "Metode", "Item", "Total"],
       ...transactions.map((t) => [
         t.id,
         new Date(t.date).toLocaleString("id-ID"),
@@ -86,10 +86,10 @@ export function LaporanView({
 
   function exportCashiers() {
     const rows: string[][] = [
-      ["Kasir", "Transaksi", "Omset"],
+      ["Outlet", "Transaksi", "Omset"],
       ...cashiers.map((c) => [c.name, String(c.transactions), String(c.revenue)]),
     ];
-    downloadCsv(`kinerja-kasir-${from}-${to}.csv`, rows);
+    downloadCsv(`kinerja-outlet-${from}-${to}.csv`, rows);
   }
 
   const grandTotal = transactions.reduce((s, t) => s + t.total, 0);
@@ -146,7 +146,7 @@ export function LaporanView({
       <Tabs defaultValue="transactions">
         <TabsList>
           <TabsTrigger value="transactions">Transaksi</TabsTrigger>
-          <TabsTrigger value="cashiers">Kinerja Kasir</TabsTrigger>
+          <TabsTrigger value="cashiers">Kinerja Outlet</TabsTrigger>
         </TabsList>
 
         <TabsContent value="transactions">
@@ -165,7 +165,7 @@ export function LaporanView({
               <TableHeader>
                 <TableRow>
                   <TableHead>Tanggal</TableHead>
-                  <TableHead>Kasir</TableHead>
+                  <TableHead>Outlet</TableHead>
                   <TableHead>Sumber</TableHead>
                   <TableHead>Metode</TableHead>
                   <TableHead>Item</TableHead>
@@ -218,7 +218,7 @@ export function LaporanView({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Kasir</TableHead>
+                  <TableHead>Outlet</TableHead>
                   <TableHead>Transaksi</TableHead>
                   <TableHead>Omset</TableHead>
                 </TableRow>
@@ -232,7 +232,7 @@ export function LaporanView({
                   </TableRow>
                 ) : (
                   cashiers.map((c) => (
-                    <TableRow key={c.cashierId}>
+                    <TableRow key={c.outletId}>
                       <TableCell>{c.name}</TableCell>
                       <TableCell>{c.transactions}</TableCell>
                       <TableCell>{rupiah(c.revenue)}</TableCell>

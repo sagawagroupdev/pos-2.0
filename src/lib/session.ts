@@ -12,7 +12,7 @@ export async function requireUser() {
   return session;
 }
 
-export async function requireRole(role: "ADMIN" | "CASHIER") {
+export async function requireRole(role: "ADMIN" | "OUTLET") {
   const session = await requireUser();
   const userRole = (session.user as { role?: string }).role;
   if (userRole !== role) {

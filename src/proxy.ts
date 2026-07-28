@@ -4,7 +4,7 @@ import { getSessionCookie } from "better-auth/cookies";
 
 const PROTECTED_PREFIXES = [
   "/dashboard",
-  "/kasir",
+  "/outlet",
   "/laporan",
   "/settings",
   "/overview",
@@ -35,7 +35,7 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/dashboard/:path*",
-    "/kasir/:path*",
+    "/outlet/:path*",
     "/laporan/:path*",
     "/settings/:path*",
     "/overview/:path*",
