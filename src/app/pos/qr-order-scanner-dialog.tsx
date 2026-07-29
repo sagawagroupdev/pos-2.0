@@ -8,6 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { QrCodeScanIcon } from "@hugeicons/core-free-icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -228,10 +229,17 @@ export function QrOrderScannerDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger render={<Button variant="outline" size="icon" />}>
-        <span className="sr-only">Scan QR Pesanan</span>
-        <HugeiconsIcon icon={QrCodeScanIcon} size={20} color="currentColor" strokeWidth={1.5} />
-      </DialogTrigger>
+      <Tooltip>
+        <TooltipTrigger
+          render={
+            <DialogTrigger render={<Button variant="outline" size="icon" />}>
+              <span className="sr-only">Scan QR Pesanan</span>
+              <HugeiconsIcon icon={QrCodeScanIcon} size={20} color="currentColor" strokeWidth={1.5} />
+            </DialogTrigger>
+          }
+        />
+        <TooltipContent side="bottom">Scan QR Pesanan</TooltipContent>
+      </Tooltip>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Scan QR Pesanan</DialogTitle>

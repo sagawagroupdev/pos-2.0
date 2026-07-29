@@ -9,6 +9,7 @@ import {
 } from "./actions";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 import {
   Edit02Icon,
   Delete02Icon,
@@ -132,25 +133,39 @@ export function CategoryManager({ categories }: { categories: CategoryRow[] }) {
                   <TableCell className="font-medium">{c.name}</TableCell>
                   <TableCell>{c.itemCount}</TableCell>
                   <TableCell className="flex justify-end gap-2">
-                    <Button size="icon" variant="ghost" onClick={() => setEditing(c)}>
-                      <HugeiconsIcon icon={Edit02Icon} size={16} color="currentColor" />
-                    </Button>
+                    <Tooltip>
+                      <TooltipTrigger
+                        render={
+                          <Button size="icon" variant="ghost" onClick={() => setEditing(c)}>
+                            <HugeiconsIcon icon={Edit02Icon} size={16} color="currentColor" />
+                          </Button>
+                        }
+                      />
+                      <TooltipContent side="bottom">Ubah Kategori</TooltipContent>
+                    </Tooltip>
                     <AlertDialog
                       open={deleteTarget?.id === c.id}
                       onOpenChange={(o) => !o && setDeleteTarget(null)}
                     >
-                      <AlertDialogTrigger
-                        render={
-                          <Button
-                            size="icon"
-                            variant="destructive"
-                            disabled={pending}
-                            onClick={() => setDeleteTarget(c)}
-                          >
-                            <HugeiconsIcon icon={Delete02Icon} size={16} color="currentColor" />
-                          </Button>
-                        }
-                      />
+                      <Tooltip>
+                        <TooltipTrigger
+                          render={
+                            <AlertDialogTrigger
+                              render={
+                                <Button
+                                  size="icon"
+                                  variant="destructive"
+                                  disabled={pending}
+                                  onClick={() => setDeleteTarget(c)}
+                                >
+                                  <HugeiconsIcon icon={Delete02Icon} size={16} color="currentColor" />
+                                </Button>
+                              }
+                            />
+                          }
+                        />
+                        <TooltipContent side="bottom">Hapus Kategori</TooltipContent>
+                      </Tooltip>
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Hapus Kategori</AlertDialogTitle>

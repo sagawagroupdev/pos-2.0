@@ -23,6 +23,17 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { ArrowUpRight01Icon, Download04Icon, Menu09Icon, Search01Icon, PlusSignIcon, Delete03Icon} from "@hugeicons/core-free-icons";
 
@@ -85,13 +96,17 @@ function downloadQrImage(table: TableRow) {
 function TableCard({ table }: { table: TableRow }) {
   const [pending, startTransition] = useTransition();
   const [downloading, setDownloading] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
 
   function handleDelete() {
-    if (!confirm(`Hapus meja ${table.number}?`)) return;
     startTransition(async () => {
       const res = await deleteTable(table.id);
-      if (res.ok) toast.success("Meja dihapus");
-      else toast.error(res.error);
+      if (res.ok) {
+        toast.success("Meja dihapus");
+        setDeleteOpen(false);
+      } else {
+        toast.error(res.error);
+      }
     });
   }
 
@@ -107,51 +122,85 @@ function TableCard({ table }: { table: TableRow }) {
   }, [table]);
 
   return (
-    <Card size="sm">
-      <CardHeader>
-        <div>
-          <CardTitle>Meja {table.number}</CardTitle>
-          {table.name && (
-            <CardDescription>{table.name}</CardDescription>
-          )}
-        </div>
-        <CardAction>
-          <DropdownMenu>
-            <DropdownMenuTrigger render={
-              <Button variant="ghost" size="icon" className="size-7">
-                <HugeiconsIcon icon={Menu09Icon} size={16} color="currentColor" />
-              </Button>} />
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem render={<a href={table.orderUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2" />}>
-                <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} color="currentColor" />
-                Buka
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleDownload} disabled={downloading}>
-                <HugeiconsIcon icon={Download04Icon} size={16} color="currentColor" />
-                {downloading ? "Memproses..." : "Download"}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={handleDelete}
-                disabled={pending}
-                className="text-destructive focus:text-destructive bg:destructive/10"
-              >
-                <HugeiconsIcon icon={Delete03Icon} size={16} color="currentColor" />
-                Hapus
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </CardAction>
-      </CardHeader>
-      <CardContent className="flex justify-center py-3">
-        <Image
-          src={table.qrDataUrl}
-          alt={`QR Meja ${table.number}`}
-          width={128}
-          height={128}
-          className="size-32"
-        />
-      </CardContent>
-    </Card>
+    <>
+      <Card size="sm">
+        <CardHeader>
+          <div>
+            <CardTitle>Meja {table.number}</CardTitle>
+            {table.name && (
+              <CardDescription>{table.name}</CardDescription>
+            )}
+          </div>
+          <CardAction>
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <DropdownMenuTrigger render={
+                      <Button variant="ghost" size="icon" className="size-7">
+                        <HugeiconsIcon icon={Menu09Icon} size={16} color="currentColor" />
+                      </Button>} />
+                  }
+                />
+                <TooltipContent side="bottom">Menu Meja</TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem render={<a href={table.orderUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2" />}>
+                  <HugeiconsIcon icon={ArrowUpRight01Icon} size={16} color="currentColor" />
+                  Buka
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownload} disabled={downloading}>
+                  <HugeiconsIcon icon={Download04Icon} size={16} color="currentColor" />
+                  {downloading ? "Memproses..." : "Download"}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => setDeleteOpen(true)}
+                  disabled={pending}
+                  variant="destructive"
+                >
+                  <HugeiconsIcon icon={Delete03Icon} size={16} color="currentColor" />
+                  Hapus
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </CardAction>
+        </CardHeader>
+        <CardContent className="flex justify-center py-3">
+          <Image
+            src={table.qrDataUrl}
+            alt={`QR Meja ${table.number}`}
+            width={128}
+            height={128}
+            className="size-32"
+          />
+        </CardContent>
+      </Card>
+
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Meja</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus meja <strong>{table.number}</strong>? Tindakan ini tidak dapat dibatalkan dan QR Code meja ini tidak akan bisa digunakan lagi.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel render={<Button variant="outline">Batal</Button>} />
+            <AlertDialogAction
+              render={
+                <Button
+                  variant="destructive"
+                  loading={pending}
+                  onClick={handleDelete}
+                >
+                  Hapus
+                </Button>
+              }
+            />
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -187,8 +236,11 @@ export function QrTableManager({ tables }: { tables: TableRow[] }) {
             </p>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger render={<Button size="sm">
-              <HugeiconsIcon icon={PlusSignIcon} size={16} color="currentColor" />
+            <DialogTrigger render={
+              <Button
+                variant="default"
+                size="sm"
+                ><HugeiconsIcon icon={PlusSignIcon} size={16} color="currentColor" />
                 Tambah
               </Button>} />
             <DialogContent>

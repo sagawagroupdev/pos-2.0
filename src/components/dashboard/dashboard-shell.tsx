@@ -14,6 +14,16 @@ import {
   TooltipTrigger,
   TooltipContent,
 } from "@/components/ui/tooltip";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { usePrinter } from "@/app/pos/printer-context";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -34,6 +44,7 @@ import {
 } from "@hugeicons/core-free-icons";
 
 export type NavItem = { href: string; label: string };
+export type NavGroup = { title?: string; items: NavItem[] };
 
 const ICON_MAP: Record<string, React.ReactNode> = {
   "/dashboard": <HugeiconsIcon icon={DashboardSquare01Icon} color="currentColor" size={20} strokeWidth={1.5} />,
@@ -53,7 +64,7 @@ export function DashboardShell({
   items,
   children,
 }: {
-  items: NavItem[];
+  items: NavGroup[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -61,6 +72,7 @@ export function DashboardShell({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
   const printer = usePrinter();
 
   useEffect(() => {
@@ -77,7 +89,8 @@ export function DashboardShell({
     }
   }
 
-  const currentItem = items.find(
+  const allItems = items.flatMap((group) => group.items);
+  const currentItem = allItems.find(
     (item) => pathname === item.href || pathname.startsWith(`${item.href}/`)
   );
   const pageTitle = currentItem?.label ?? "";
@@ -90,6 +103,8 @@ export function DashboardShell({
   }
 
   function renderSidebar(mobile = false) {
+    const isCollapsed = collapsed && !mobile;
+
     return (
       <>
         <div className="flex h-14 shrink-0 items-center gap-3 px-3">
@@ -104,42 +119,74 @@ export function DashboardShell({
         </div>
 
         <ScrollArea className="flex-1">
-          <nav className="space-y-1 px-2 pt-1">
-            {items.map((item) => {
-              const active =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
-              const icon = ICON_MAP[item.href];
+          <nav className={cn("px-2 pt-1", isCollapsed ? "space-y-1" : "space-y-3")}>
+            {isCollapsed ? (
+              items.flatMap((group) => group.items).map((item) => {
+                const active =
+                  pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const icon = ICON_MAP[item.href];
 
-              const link = (
-                <Link
-                  href={item.href}
-                  onClick={() => mobile && setMobileSidebarOpen(false)}
-                  className={cn(
-                    "flex items-center gap-3 rounded-xl text-sm transition-colors",
-                    mobile || !collapsed ? "px-3 py-2" : "justify-center size-10",
-                    active
-                      ? "bg-primary text-primary-foreground"
-                      : "hover:bg-white"
-                  )}
-                >
-                  {icon ?? null}
-                  {(!collapsed || mobile) && (
-                    <span className="truncate">{item.label}</span>
-                  )}
-                </Link>
-              );
-
-              if (!mobile && collapsed && icon) {
-                return (
-                  <Tooltip key={item.href}>
-                    <TooltipTrigger render={link} />
-                    <TooltipContent side="right">{item.label}</TooltipContent>
-                  </Tooltip>
+                const link = (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex items-center justify-center size-10 rounded-xl text-sm transition-colors mx-auto",
+                      active
+                        ? "bg-primary text-primary-foreground"
+                        : "hover:bg-white"
+                    )}
+                  >
+                    {icon ?? null}
+                  </Link>
                 );
-              }
 
-              return <div key={item.href}>{link}</div>;
-            })}
+                if (icon) {
+                  return (
+                    <Tooltip key={item.href}>
+                      <TooltipTrigger render={link} />
+                      <TooltipContent side="right">{item.label}</TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return <div key={item.href}>{link}</div>;
+              })
+            ) : (
+              items.map((group, groupIdx) => (
+                <div key={group.title || groupIdx} className="space-y-1">
+                  {group.title && (
+                    <div className="px-3 pt-2 pb-1 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
+                      {group.title}
+                    </div>
+                  )}
+                  <div className="space-y-1">
+                    {group.items.map((item) => {
+                      const active =
+                        pathname === item.href || pathname.startsWith(`${item.href}/`);
+                      const icon = ICON_MAP[item.href];
+
+                      return (
+                        <div key={item.href}>
+                          <Link
+                            href={item.href}
+                            onClick={() => mobile && setMobileSidebarOpen(false)}
+                            className={cn(
+                              "flex items-center gap-3 rounded-xl text-sm transition-colors px-3 py-2",
+                              active
+                                ? "bg-primary text-primary-foreground"
+                                : "hover:bg-white"
+                            )}
+                          >
+                            {icon ?? null}
+                            <span className="truncate">{item.label}</span>
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))
+            )}
           </nav>
         </ScrollArea>
 
@@ -149,9 +196,9 @@ export function DashboardShell({
               render={
                 <Button
                   variant="destructive"
-                  size={!mobile && collapsed ? "icon" : "sm"}
+                  size={!mobile && collapsed ? "icon" : "lg"}
                   className={!mobile && collapsed ? "size-10" : "w-full"}
-                  onClick={handleLogout}
+                  onClick={() => setLogoutOpen(true)}
                 >
                   <HugeiconsIcon icon={Logout01Icon} color="currentColor" size={20} strokeWidth={1.5} />
                   {(!mobile && !collapsed) && "Keluar"}
@@ -196,49 +243,97 @@ export function DashboardShell({
             >
               <HugeiconsIcon icon={SidebarLeftIcon} color="currentColor" size={24} strokeWidth={1.5} />
             </Button>
-            <Button
-              className="hidden lg:inline-flex"
-              variant="ghost"
-              size="icon-sm"
-              onClick={() => setCollapsed((c) => !c)}
-            >
-              {collapsed ? (
-                <HugeiconsIcon icon={SidebarRightIcon} color="currentColor" size={24} strokeWidth={1.5} />
-              ) : (
-                <HugeiconsIcon icon={SidebarLeftIcon} color="currentColor" size={24} strokeWidth={1.5} />
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    className="hidden lg:inline-flex"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setCollapsed((c) => !c)}
+                  >
+                    {collapsed ? (
+                      <HugeiconsIcon icon={SidebarRightIcon} color="currentColor" size={24} strokeWidth={1.5} />
+                    ) : (
+                      <HugeiconsIcon icon={SidebarLeftIcon} color="currentColor" size={24} strokeWidth={1.5} />
+                    )}
+                  </Button>
+                }
+              />
+              <TooltipContent side="bottom">
+                {collapsed ? "Buka Sidebar" : "Tutup Sidebar"}
+              </TooltipContent>
+            </Tooltip>
             <div className="w-px h-5 bg-border" />
             <h2 className="text-sm font-medium">{pageTitle}</h2>
             <div className="ml-auto flex items-center gap-1">
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                aria-label={printer.connected ? "Printer siap" : "Konek printer"}
-                onClick={printer.connected ? undefined : () => printer.connect()}
-                className="relative"
-              >
-                <HugeiconsIcon icon={PrinterIcon} size={18} color="currentColor" strokeWidth={1.5} />
-                <span
-                  className={`absolute -right-0.5 -top-0.5 size-2 rounded-full ring-2 ring-background ${
-                    printer.connected ? "bg-emerald-500" : "bg-red-500"
-                  }`}
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      aria-label={printer.connected ? "Printer siap" : "Konek printer"}
+                      onClick={printer.connected ? undefined : () => printer.connect()}
+                      className="relative"
+                    >
+                      <HugeiconsIcon icon={PrinterIcon} size={18} color="currentColor" strokeWidth={1.5} />
+                      <span
+                        className={`absolute -right-0.5 -top-0.5 size-2 rounded-full ring-2 ring-background ${
+                          printer.connected ? "bg-emerald-500" : "bg-red-500"
+                        }`}
+                      />
+                    </Button>
+                  }
                 />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon-sm"
-                onClick={toggleFullscreen}
-                aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
-              >
-                <HugeiconsIcon icon={FullScreenIcon} size={18} color="currentColor" strokeWidth={1.5} />
-              </Button>
+                <TooltipContent side="bottom">
+                  {printer.connected ? "Printer Siap" : "Hubungkan Printer"}
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      onClick={toggleFullscreen}
+                      aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                    >
+                      <HugeiconsIcon icon={FullScreenIcon} size={18} color="currentColor" strokeWidth={1.5} />
+                    </Button>
+                  }
+                />
+                <TooltipContent side="bottom">
+                  {isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+                </TooltipContent>
+              </Tooltip>
             </div>
           </div>
           {/* Page content */}
           <div className="p-6 flex-1">{children}</div>
         </div>
       </main>
+
+      <AlertDialog open={logoutOpen} onOpenChange={setLogoutOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Keluar</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin keluar dari akun Anda? Sesi Anda akan diakhiri.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel render={<Button variant="outline">Batal</Button>} />
+            <AlertDialogAction
+              render={
+                <Button variant="destructive" onClick={handleLogout}>
+                  Keluar
+                </Button>
+              }
+            />
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

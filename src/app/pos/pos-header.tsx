@@ -12,6 +12,7 @@ import { useDraftsUI } from "./drafts-ui-context";
 import { usePrinter } from "./printer-context";
 import { useQrOrderSheetUI } from "./qr-order-sheet-ui-context";
 import { QrOrderNotifier } from "@/components/qr-order-notifier";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
 
 export function PosHeader({
   cashierId,
@@ -92,57 +93,89 @@ export function PosHeader({
           </button>
         </div>
         {draftsEnabled && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setDraftsOpen(true)}
-            aria-label="Pesanan tertahan"
-            className="relative"
-          >
-            <HugeiconsIcon icon={LicenseDraftFreeIcons} size={22} color="currentColor" strokeWidth={1.5} />
-            {draftCount > 0 && (
-              <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
-                {draftCount}
-              </span>
-            )}
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setDraftsOpen(true)}
+                  aria-label="Pesanan tertahan"
+                  className="relative"
+                >
+                  <HugeiconsIcon icon={LicenseDraftFreeIcons} size={22} color="currentColor" strokeWidth={1.5} />
+                  {draftCount > 0 && (
+                    <span className="absolute right-0.5 top-0.5 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                      {draftCount}
+                    </span>
+                  )}
+                </Button>
+              }
+            />
+            <TooltipContent side="bottom">Pesanan Tertahan</TooltipContent>
+          </Tooltip>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setQrOrderSheetOpen(true)}
-          aria-label="Pesanan QR masuk"
-          className="relative"
-        >
-          <HugeiconsIcon icon={Notification01Icon} size={22} color="currentColor" strokeWidth={1.5} />
-          {qrOrderCount > 0 && (
-            <span className="absolute -right-1 -top-0.5 flex size-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-primary-foreground">
-              {qrOrderCount}
-            </span>
-          )}
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label={printer.connected ? "Printer siap" : "Konek printer"}
-          onClick={printer.connected ? undefined : () => printer.connect()}
-          className="relative"
-        >
-          <HugeiconsIcon icon={PrinterIcon} size={22} color="currentColor" strokeWidth={1.5} />
-          <span
-            className={`absolute -right-1 -top-0.5 size-2 rounded-full ring-2 ring-background ${
-              printer.connected ? "bg-emerald-500" : "bg-red-500"
-            }`}
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setQrOrderSheetOpen(true)}
+                aria-label="Pesanan QR masuk"
+                className="relative"
+              >
+                <HugeiconsIcon icon={Notification01Icon} size={22} color="currentColor" strokeWidth={1.5} />
+                {qrOrderCount > 0 && (
+                  <span className="absolute -right-1 -top-0.5 flex size-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-semibold text-primary-foreground">
+                    {qrOrderCount}
+                  </span>
+                )}
+              </Button>
+            }
           />
-        </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={toggleFullscreen}
-          aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
-        >
-          <HugeiconsIcon icon={FullScreenIcon} size={22} color="currentColor" strokeWidth={1.5} />
-        </Button>
+          <TooltipContent side="bottom">Pesanan QR Masuk</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label={printer.connected ? "Printer siap" : "Konek printer"}
+                onClick={printer.connected ? undefined : () => printer.connect()}
+                className="relative"
+              >
+                <HugeiconsIcon icon={PrinterIcon} size={22} color="currentColor" strokeWidth={1.5} />
+                <span
+                  className={`absolute -right-1 -top-0.5 size-2 rounded-full ring-2 ring-background ${
+                    printer.connected ? "bg-emerald-500" : "bg-red-500"
+                  }`}
+                />
+              </Button>
+            }
+          />
+          <TooltipContent side="bottom">
+            {printer.connected ? "Printer Siap" : "Hubungkan Printer"}
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger
+            render={
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleFullscreen}
+                aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+              >
+                <HugeiconsIcon icon={FullScreenIcon} size={22} color="currentColor" strokeWidth={1.5} />
+              </Button>
+            }
+          />
+          <TooltipContent side="bottom">
+            {isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+          </TooltipContent>
+        </Tooltip>
       </div>
     </header>
   );

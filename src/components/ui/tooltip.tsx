@@ -6,7 +6,7 @@ import { Tooltip as TooltipPrimitive } from "@base-ui/react/tooltip"
 import { cn } from "@/lib/utils"
 
 function TooltipProvider({
-  delay = 200,
+  delay = 0,
   ...props
 }: TooltipPrimitive.Provider.Props) {
   return (
@@ -49,7 +49,7 @@ function TooltipContent({
           {...props}
         >
           {children}
-          <TooltipPrimitive.Arrow className="fill-foreground" />
+          <TooltipPrimitive.Arrow className="relative block w-3 h-1.5 overflow-clip data-[side=top]:-bottom-1.5 data-[side=top]:rotate-180 data-[side=bottom]:-top-1.5 data-[side=bottom]:rotate-0 data-[side=left]:-right-2.25 data-[side=left]:rotate-90 data-[side=right]:-left-2.25 data-[side=right]:-rotate-90 before:content-[''] before:block before:absolute before:bottom-0 before:left-1/2 before:w-[8.485px] before:h-[8.485px] before:bg-foreground before:transform-[translate(-50%,50%)_rotate(45deg)]" />
         </TooltipPrimitive.Popup>
       </TooltipPrimitive.Positioner>
     </TooltipPrimitive.Portal>

@@ -56,6 +56,9 @@ SET "outletId" = c."outletId"
 FROM "Category" AS c
 WHERE i."categoryId" = c."id" AND i."outletId" IS NULL;
 
+-- Drop global unique constraint BEFORE inserting per-outlet duplicates
+DROP INDEX "Category_name_key";
+
 -- Duplicate legacy global menu into every other outlet account
 WITH "primary_outlet" AS (
   SELECT "id"
@@ -167,7 +170,6 @@ JOIN "target_outlets" AS t ON TRUE
 LEFT JOIN "Setting" AS existing ON existing."outletId" = t."id"
 WHERE existing."id" IS NULL;
 
-DROP INDEX "Category_name_key";
 CREATE UNIQUE INDEX "Category_outletId_name_key" ON "Category"("outletId", "name");
 CREATE INDEX "Item_outletId_idx" ON "Item"("outletId");
 CREATE UNIQUE INDEX "Setting_outletId_key" ON "Setting"("outletId");

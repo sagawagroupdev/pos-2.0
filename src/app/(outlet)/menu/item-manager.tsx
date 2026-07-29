@@ -249,20 +249,27 @@ function ItemFormFields({
                 <span className="text-sm font-medium text-white">Mengunggah…</span>
               </div>
             )}
-            <Button
-              type="button"
-              size="icon"
-              variant="destructive"
-              onClick={handleRemoveImage}
-              disabled={uploading}
-              className="absolute top-2 right-2 size-8 rounded-full"
-            >
-              <HugeiconsIcon
-                icon={Delete02Icon}
-                size={16}
-                color="currentColor"
+            <Tooltip>
+              <TooltipTrigger
+                render={
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="destructive"
+                    onClick={handleRemoveImage}
+                    disabled={uploading}
+                    className="absolute top-2 right-2 size-8 rounded-full"
+                  >
+                    <HugeiconsIcon
+                      icon={Delete02Icon}
+                      size={16}
+                      color="currentColor"
+                    />
+                  </Button>
+                }
               />
-            </Button>
+              <TooltipContent side="bottom">Hapus Gambar</TooltipContent>
+            </Tooltip>
           </div>
         ) : (
           <div
@@ -432,7 +439,7 @@ export function ItemManager({
           }}
         >
           <Button
-            size="default"
+            size="sm"
             variant="default"
             disabled={categories.length === 0}
             onClick={() => setCreateOpen(true)}

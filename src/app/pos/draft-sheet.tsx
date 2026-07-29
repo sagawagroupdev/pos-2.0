@@ -134,12 +134,12 @@ export function DraftSheet({
                             variant="outline"
                             onClick={() => setDetail(d)}
                             aria-label="Detail pesanan"
-                          />
+                          >
+                            <HugeiconsIcon icon={ViewIcon} size={16} color="currentColor" strokeWidth={1.5} />
+                          </Button>
                         }
-                      >
-                        <HugeiconsIcon icon={ViewIcon} size={16} color="currentColor" strokeWidth={1.5} />
-                      </TooltipTrigger>
-                      <TooltipContent>Detail</TooltipContent>
+                      />
+                      <TooltipContent side="bottom">Detail</TooltipContent>
                     </Tooltip>
                   </li>
                 ))}
@@ -275,14 +275,21 @@ export function DraftSheet({
                     Lanjutkan
                   </Button>
 
-                  <Button
-                    variant="destructive"
-                    onClick={() => setConfirmDelete(detailDraft)}
-                    disabled={pending}
-                    aria-label="Hapus pesanan"
-                  >
-                    <HugeiconsIcon icon={Delete02Icon} size={16} color="currentColor" strokeWidth={1.5} />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger
+                      render={
+                        <Button
+                          variant="destructive"
+                          onClick={() => setConfirmDelete(detailDraft)}
+                          disabled={pending}
+                          aria-label="Hapus pesanan"
+                        >
+                          <HugeiconsIcon icon={Delete02Icon} size={16} color="currentColor" strokeWidth={1.5} />
+                        </Button>
+                      }
+                    />
+                    <TooltipContent side="bottom">Hapus Pesanan</TooltipContent>
+                  </Tooltip>
                 </div>
               </div>
             </>

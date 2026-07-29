@@ -1,15 +1,40 @@
 import { requireRole } from "@/lib/session";
-import { DashboardShell, type NavItem } from "@/components/dashboard/dashboard-shell";
+import { DashboardShell, type NavGroup } from "@/components/dashboard/dashboard-shell";
 import { QrOrderNotifier } from "@/components/qr-order-notifier";
 
-const OUTLET_NAV: NavItem[] = [
-  { href: "/overview", label: "Overview" },
-  { href: "/pos", label: "POS" },
-  { href: "/orders", label: "Pesanan" },
-  { href: "/menu", label: "Menu" },
-  { href: "/qr-table", label: "QR Table" },
-  { href: "/laporan-outlet", label: "Laporan" },
-  { href: "/settings", label: "Pengaturan" },
+const OUTLET_NAV: NavGroup[] = [
+  {
+    title: "Utama",
+    items: [
+      { href: "/overview", label: "Overview" },
+    ],
+  },
+  {
+    title: "Transaksi",
+    items: [
+      { href: "/pos", label: "POS" },
+      { href: "/orders", label: "Pesanan" },
+    ],
+  },
+  {
+    title: "Operasional",
+    items: [
+      { href: "/menu", label: "Menu" },
+      { href: "/qr-table", label: "QR Table" },
+    ],
+  },
+  {
+    title: "Analisis",
+    items: [
+      { href: "/laporan-outlet", label: "Laporan" },
+    ],
+  },
+  {
+    title: "Sistem",
+    items: [
+      { href: "/settings", label: "Pengaturan" },
+    ],
+  },
 ];
 
 export default async function OutletLayout({

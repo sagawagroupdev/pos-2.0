@@ -88,7 +88,7 @@ export const PrintTemplate = forwardRef<HTMLDivElement, PrintTemplateProps>(
             </div>
           </div>
           <div style={{ textAlign: "right", fontSize: 11, color: C.gray600 }}>
-            <p style={{ fontSize: 13, fontWeight: 700, color: C.black, margin: 0 }}>Laporan Penjualan</p>
+            <p style={{ fontSize: 13, fontWeight: 700, color: C.black, margin: 0 }}>Laporan Outlet</p>
             <p style={{ margin: "3px 0 0" }}>Periode: {fmtPeriod(from)} – {fmtPeriod(to)}</p>
             <p style={{ margin: "2px 0 0" }}>Dicetak: {printDate}</p>
           </div>

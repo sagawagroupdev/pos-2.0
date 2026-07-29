@@ -164,7 +164,7 @@ export function LaporanOutletView({
       pdf.setFontSize(13);
       pdf.setFont("helvetica", "bold");
       pdf.setTextColor(0, 0, 0);
-      pdf.text("Laporan Penjualan", pageW - margin, margin, { align: "right" });
+      pdf.text("Laporan Omset Outlet", pageW - margin, margin, { align: "right" });
       pdf.setFontSize(9);
       pdf.setFont("helvetica", "normal");
       pdf.setTextColor(80, 80, 80);
